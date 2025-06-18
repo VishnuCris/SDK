@@ -1,0 +1,23 @@
+{
+  "name": "web_sdk",
+  "version": "1.0.0",
+  "description": "WEB SDK For Tracking User actions",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VishnuCris/web_sdk_sample.git"
+  },
+  "author": "Vishnu",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/VishnuCris/web_sdk_sample/issues"
+  },
+  "homepage": "https://github.com/VishnuCris/web_sdk_sample#readme",
+  "devDependencies": {
+    "esbuild": "^0.25.4"
+  }
+}
