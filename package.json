@@ -19,5 +19,8 @@
   "homepage": "https://github.com/VishnuCris/web_sdk_sample#readme",
   "devDependencies": {
     "esbuild": "^0.25.4"
+  },
+  "dependencies": {
+    "ua-parser-js": "^2.0.3"
   }
 }

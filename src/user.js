@@ -3,16 +3,18 @@ import {API} from '.api/api.js';
 import { Endpoints } from './api/endpoints';
 import { Storage } from "./storage";
 import { Helpers } from './utilities/helper';
+import { Session } from './session';
 export class User{
-    constructor(client_id = null, passcode = null){
-        this.client_id = client_id;
+    constructor(clientId = null, passcode = null){
+        this.clientId = clientId;
         this.passcode = passcode;
-        this.api = new API(client_id, passcode)
+        this.api = new API(clientId, passcode)
         this.storage = new Storage();
         this.helpers = new Helpers();
+        this.session = new Session(clientId, passcode);
     }
 
-    createUser(payload){
+    async createUser(payload){
         // this.api.request(Endpoints.createUser, payload);
         this.storage.set(
             "user",
@@ -21,11 +23,18 @@ export class User{
                 "timestamp":this.helpers.getCurrentTimeStamp()
             }
         )
+        // create a session for the current user
+        this.session.createSession()
+
     }
 
-    getUser(){
-        // this.api.request(Endpoints.getUser, payload);
-        return this.storage.get("user")
+    async getUser(){
+        let user = this.storage.get("user")
+        if(!user){
+            await this.createUser()
+            return this.storage.get("user")
+        }
+        return user
     }
 
     async onUserLogin(){
@@ -42,10 +51,10 @@ export class User{
         this.storeUser(response.data)
     }
 
-    storeUser(user_object){
+    storeUser(userObject){
         this.storage.set(
             "user",
-            user_object
+            userObject
         )
     }
 
