@@ -14,7 +14,7 @@ export class API{
         }
     }
 
-    request(url,payload){
+    request(url,payload={}){
         fetch(`${this.api_domain}/${url}`, {
             method: 'POST',
             headers: this.headers,

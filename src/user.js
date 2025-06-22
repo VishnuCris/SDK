@@ -37,17 +37,23 @@ export class User{
         return user
     }
 
-    async onUserLogin(){
-        let response = await this.api.request(Endpoints.userlogin, payload);
-        this.storeUser(response.data)
+    async onUserLogin(userProperties){
+        let user = this.storage.get("user")
+        user = {...user,...userProperties}
+        let response = await this.api.request(Endpoints.userlogin, user);
+        this.storeUser(response.data) // in this response have to be user object may be change in the prespective of api logics
     }
 
     onUserLogout(){
-        this.api.request(Endpoints.userlogout, payload);
+        this.unStoreUser();
+        this.createUser();
+        this.api.request(Endpoints.userlogout); // discuss whether we have to hit api incase of logout
     }
 
-    async pushProfile(){
-        let response = this.api.request(Endpoints.pushProfile, payload);
+    async pushProfile(userProperties){
+        let user = this.storage.get("user")
+        user = {...user,...userProperties}
+        let response = this.api.request(Endpoints.pushProfile, user); //  discuss whether we have to hit api incase of profilepush
         this.storeUser(response.data)
     }
 

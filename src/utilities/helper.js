@@ -33,4 +33,24 @@ export class Helpers{
         return `nexora-${Date.now()}-${hashHex.slice(0, 12)}`;
       };
       
+      getDateTimeDifference(dateIsoString){
+        const fixedDate = new Date(dateIsoString);
+        const now = new Date(); // current time
+        const diffMs = now - fixedDate; // difference in milliseconds
+        // Convert milliseconds to units
+        const diffSeconds = Math.floor(diffMs / 1000);
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        const diffHours   = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays    = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (seconds < 60) {
+          return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+        } else if (minutes < 60) {
+          return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+        } else if (hours < 24) {
+          return `${hours} hour${hours !== 1 ? 's' : ''}`;
+        } else {
+          return `${days} day${days !== 1 ? 's' : ''}`;
+        }
+      }
 }

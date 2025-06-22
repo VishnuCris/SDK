@@ -10,15 +10,19 @@ export class Session{
         this.helpers = new Helpers();
     }
 
-    createSession(){
+    createSession(sessionOccurence = 0){
         const timestamp = this.helpers.getCurrentTimeStamp();
         const randomPart = Math.random().toString(36).substring(2, 10); // 8-char random string
         const sessionId =  `sess-${timestamp}-${randomPart}`;
 
-        this.setSession("nexora_session", sessionId);
+        this.setSession("nexora_session", {
+            "sesion_id":sessionId,
+            "timestamp":timestamp,
+            "session_number" : sessionOccurence + 1
+        });
     }
 
-    getSession(key){
+    getSession(){
         const session = sessionStorage.getItem('nexora_session');
         if(!session){
             this.createSession();
@@ -33,5 +37,15 @@ export class Session{
 
     endSession(key){
         sessionStorage.removeItem(key);
+    }
+
+    getSessionDuration(){
+        let session = this.getSession()
+        return this.helpers.getDateTimeDifference(session['timestamp'])
+    }
+
+    getSessionOccurence(){
+        let session = this.getSession()
+        return session['session_number']
     }
 }
