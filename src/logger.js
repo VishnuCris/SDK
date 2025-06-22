@@ -1,7 +1,6 @@
 
 export class Logger{
-    constructor(client_id = null, passcode = null){
-        this.client_id = client_id;
-        this.passcode = passcode;
+    static logError(error, context = ''){
+        console.error(`Error in ${context}:`, error);
     }
 }

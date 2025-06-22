@@ -1,7 +1,7 @@
 import { API } from "./api/api";
 import { Endpoints } from "./api/endpoints";
-import { Storage } from "./storage";
 import { Session } from "./session";
+import { Logger } from "./logger";
 import { User } from './user';
 import { Helpers } from "./utilities/helper";
 import UAParser from 'ua-parser-js';
@@ -18,9 +18,28 @@ export class Event{
         this.helpers = new Helpers()
         this.session = new Session(clientId, passcode)
         this.uaParser = new  new UAParser();
+        this.inactivityTimeout = undefined;
     }
 
-    get_default_event_properties(ignorable_properties = []){
+    autoWrapMethods() {
+        const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this))
+          .filter(name => typeof this[name] === "function" && name !== "constructor");
+    
+        for (const methodName of methodNames) {
+          const originalMethod = this[methodName];
+    
+          this[methodName] = async (...args) => {
+            try {
+              return await originalMethod.apply(this, args);
+            } catch (err) {
+              Logger.logError(err, methodName);
+              throw err; // Optional: rethrow if needed
+            }
+          };
+        }
+      }
+
+    getDefaultEventProperties(ignorable_properties = []){
         let properties = {}
         properties['timestamp'] = this.helpers.getCurrentTimeStamp()
         properties['user'] = this.user.getUser()
@@ -71,12 +90,12 @@ export class Event{
         })
     }
 
-    website_launched(properties = {}){
+    websiteLaunched(properties = {}){
         let event_properties = {
             "event_name": "website_launched",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties()}
+        event_properties = {...event_properties,...this.getDefaultEventProperties()}
         // add additional event properties
         event_properties['event_properties'] = {
             "initial_launch": true, // logic for taking this
@@ -91,30 +110,36 @@ export class Event{
 
     }
 
-    screen_viewed(properties = {}){
-        let event_properties = {
-            "event_name": "screen_viewed",
+    screenViewed(properties = {}){
+        if(this.user.isUserExists()){
+            this.sessionStarted()
+            let event_properties = {
+                "event_name": "screen_viewed",
+            }
+            // default properties
+            event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+            // add additional event properties
+            event_properties['event_properties'] = {
+                "screen_name": document.title,                    // You can also use custom mapping
+                "url": window.location.href,
+                "referrer": document.referrer || null,           // Previous page URL
+                viewDurationSeconds: 0, // we have to take by listening other events (beforeload)    
+                ...properties
+            };
+            // push event
+            this.api.request(Endpoints.pushEvent, event_properties)
+        }else{
+            this.websiteLaunched()
+            this.reactInactivity()
         }
-        // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
-        // add additional event properties
-        event_properties['event_properties'] = {
-            "screen_name": document.title,                    // You can also use custom mapping
-            "url": window.location.href,
-            "referrer": document.referrer || null,           // Previous page URL
-            viewDurationSeconds: 0, // we have to take by listening other events (beforeload)    
-            ...properties
-        };
-        // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    website_closed(properties = {}){
+    websiteClosed(properties = {}){
         let event_properties = {
             "event_name": "website_closed",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
+        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
         // add additional event properties
         event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
@@ -123,14 +148,16 @@ export class Event{
         };
         // push event
         this.api.request(Endpoints.pushEvent, event_properties)
+        // session closed
+        this.session.endSession()
     }
 
-    session_started(properties = {}){
+    sessionStarted(properties = {}){
         let event_properties = {
             "event_name": "session_started",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
+        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -143,12 +170,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    session_ended(properties = {}){
+    sessionEnded(properties = {}){
         let event_properties = {
             "event_name": "session_ended",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
+        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
         // add additional event properties
         event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
@@ -159,67 +186,67 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    notification_recieved(properties = {}){ // need to look for events to capture this
+    notificationRecieved(properties = {}){ // need to look for events to capture this
         let event_properties = {
             "event_name": "notification_recieved",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
+        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
-            "notification_id": "notif_promo_xyz789",
-            "campaign_id": "cmp_summer_sale_2025",
-            "notification_type": "push",
-            "title": "Big Summer Sale!",
-            "body": "Shop now and get 50% off on all electronics!",
+            // "notification_id": "notif_promo_xyz789",
+            // "campaign_id": "cmp_summer_sale_2025",
+            // "notification_type": "push",
+            // "title": "Big Summer Sale!",
+            // "body": "Shop now and get 50% off on all electronics!",
             ...properties
         };
         // push event
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    notification_opened(properties = {}){
+    notificationOpened(properties = {}){
         let event_properties = {
             "event_name": "notification_opened",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
+        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
-            "notification_id": "notif_promo_xyz789",
-            "campaign_id": "cmp_summer_sale_2025",
-            "action_id": null,
-            "deep_link_url": "your_app://products?category=electronics",
+            // "notification_id": "notif_promo_xyz789",
+            // "campaign_id": "cmp_summer_sale_2025",
+            // "action_id": null,
+            // "deep_link_url": "your_app://products?category=electronics",
             ...properties
         };
         // push event
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    notification_dismissed(properties = {}){
+    notificationDismissed(properties = {}){
         let event_properties = {
             "event_name": "notification_dismissed",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties(['network'])}
+        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
-            "notification_id": "notif_promo_xyz789",
+            // "notification_id": "notif_promo_xyz789",
             ...properties
         };
         // push event
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    device_online(properties = {}){
+    deviceOnline(properties = {}){
         let event_properties = {
             "event_name": "device_online",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties()}
+        event_properties = {...event_properties,...this.getDefaultEventProperties()}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -230,12 +257,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    device_offline(properties = {}){
+    deviceOffline(properties = {}){
         let event_properties = {
             "event_name": "device_offline",
         }
         // default properties
-        event_properties = {...event_properties,...this.get_default_event_properties()}
+        event_properties = {...event_properties,...this.getDefaultEventProperties()}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -243,5 +270,12 @@ export class Event{
         };
         // push event
         this.api.request(Endpoints.pushEvent, event_properties)
+    }
+
+    resetInactivityTimer() {
+        clearTimeout(this.inactivityTimeout);
+        this.inactivityTimeout = setTimeout(() => {
+            this.event.sessionEnded()
+        }, 20 * 60 * 1000); // 20 minutes
     }
 }

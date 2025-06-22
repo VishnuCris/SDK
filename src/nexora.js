@@ -1,7 +1,6 @@
 
 import { Event } from "./event";
-import { API } from "./api/api";
-import { User } from "./user";
+import { Logger } from "./logger";
 
 export class Nexora{
     constructor(clientId = null, passcode = null, apiDomain = window.apiDomain){
@@ -11,76 +10,67 @@ export class Nexora{
         // apply this api domain to windows
         window.apiDomain = apiDomain;
         this.event = new Event(clientId, passcode)
-        this.user = new User(clientId, passcode)
     }
 
     listenWebsiteLaunchedEvent(){
         window.addEventListener('load', () => {
-            this.event.website_launched()
+            this.event.screenViewed()
         });
           
     }
 
     listenWebsiteClosedhEvent(){
         window.addEventListener('beforeunload', () => {
-            this.event.website_launched()
+            this.event.websiteClosed()
         });
           
     }
-
-    // listenScreenViewedEvent(){ // screen view
-    //     window.addEventListener('load', () => {
-    //         this.event.website_launched()
-    //     });
-          
-    // }
-
-    // listenSessionStartsEvent(){ // session starts
-    //     window.addEventListener('load', () => {
-    //         this.event.website_launched()
-    //     });
-          
-    // }
-
-    // listenSessionEndsEvent(){ // session ends
-    //     window.addEventListener('load', () => {
-    //         this.event.website_launched()
-    //     });
-          
-    // }
-
+      
     listenDeviceOnlineEvent(){
         window.addEventListener('online', () => {
-            this.event.device_online()
+            this.event.deviceOnline()
         });
           
     }
 
     listenDeviceOfflineEvent(){
         window.addEventListener('offline', () => {
-            this.event.device_offline()
+            this.event.deviceOffline()
         });
           
     }
 
     listenNoticationRecievedEvent(){
-        window.addEventListener('push', () => {
-            this.event.notification_recieved()
+        window.addEventListener('push', (event) => {
+            if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
+                this.event.notificationRecieved()
         });
           
     }
 
     listenNotificationViewedEvent(){
-        window.addEventListener('notificationclick', () => {
-            this.event.notification_opened()
+        window.addEventListener('notificationclick', (event) => {
+            if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
+                this.event.notificationOpened()
         });
           
     }
 
     listenNotificationDismissedEvent(){
-        window.addEventListener('notificationclose', () => {
-            this.event.website_launched()
+        window.addEventListener('notificationclose', (event) => {
+            if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
+                this.event.notificationDismissed()
         });
           
+    }
+
+    handleGlobalExceptions(){
+        window.addEventListener("error", (event) => {
+            Logger.logError(event.error || event.message, "global_error");
+        });
+          
+        window.addEventListener("unhandledrejection", (event) => {
+            Logger.logError(event.reason, "unhandled_promise_rejection");
+        });
     }
 }

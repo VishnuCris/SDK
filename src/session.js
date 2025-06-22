@@ -1,6 +1,7 @@
 
 import { Storage } from "./storage";
 import { Helpers } from "./utilities/helper";
+import { Logger } from "./logger";
 
 export class Session{
     constructor(clientId = null, passcode = null){
@@ -9,6 +10,24 @@ export class Session{
         this.storage = new Storage();
         this.helpers = new Helpers();
     }
+
+    autoWrapMethods() {
+        const methodNames = Object.getOwnPropertyNames(Object.getPrototypeOf(this))
+          .filter(name => typeof this[name] === "function" && name !== "constructor");
+    
+        for (const methodName of methodNames) {
+          const originalMethod = this[methodName];
+    
+          this[methodName] = async (...args) => {
+            try {
+              return await originalMethod.apply(this, args);
+            } catch (err) {
+              Logger.logError(err, methodName);
+              throw err; // Optional: rethrow if needed
+            }
+          };
+        }
+      }
 
     createSession(sessionOccurence = 0){
         const timestamp = this.helpers.getCurrentTimeStamp();

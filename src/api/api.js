@@ -15,23 +15,27 @@ export class API{
     }
 
     request(url,payload={}){
-        fetch(`${this.api_domain}/${url}`, {
-            method: 'POST',
-            headers: this.headers,
-            body: JSON.stringify(payload)
-        })
-        .then(response => response.json())
-        .then(result => {
-            if(!result.status)
-                this.logger.error(result.error)
-            return result
-        })
-        .catch(error => {
-            this.logger.error(error)
-            return {
-                "status" : false,
-                "error": error
-            }
-        });
+        // console the payloads and endpoints
+        console.log(`${this.api_domain}/${url}`)
+        console.log(payload)
+        console.log(this.headers)
+        // fetch(`${this.api_domain}/${url}`, {
+        //     method: 'POST',
+        //     headers: this.headers,
+        //     body: JSON.stringify(payload)
+        // })
+        // .then(response => response.json())
+        // .then(result => {
+        //     if(!result.status)
+        //         this.logger.error(result.error)
+        //     return result
+        // })
+        // .catch(error => {
+        //     this.logger.error(error)
+        //     return {
+        //         "status" : false,
+        //         "error": error
+        //     }
+        // });
     }
 }
