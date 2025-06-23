@@ -1,4 +1,4 @@
-import Nexora from './nexora'
+import {Nexora} from './nexora'
 
 window.Nexora = Nexora
 

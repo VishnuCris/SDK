@@ -10,6 +10,19 @@ export class Nexora{
         // apply this api domain to windows
         window.apiDomain = apiDomain;
         this.event = new Event(clientId, passcode)
+        // register all events
+        this.registerAllEvents()
+    }
+
+    registerAllEvents(){
+        this.listenWebsiteLaunchedEvent()
+        this.listenWebsiteClosedhEvent()
+        this.listenDeviceOnlineEvent()
+        this.listenDeviceOfflineEvent()
+        this.listenNoticationRecievedEvent()
+        this.listenNotificationViewedEvent()
+        this.listenNotificationDismissedEvent()
+        this.handleGlobalExceptions()
     }
 
     listenWebsiteLaunchedEvent(){

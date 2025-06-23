@@ -37,10 +37,11 @@ export class User{
 
     async createUser(payload){
         // this.api.request(Endpoints.createUser, payload);
+        let userId = await this.helpers.createUserID()
         this.storage.set(
             "user",
             {
-                "id": this.helpers.createUserID(),
+                "id": userId,
                 "timestamp":this.helpers.getCurrentTimeStamp()
             }
         )

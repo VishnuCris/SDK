@@ -2,13 +2,13 @@
 import { Logger } from "../logger";
 
 export class API{
-    constructor(client_id = null, passcode = null, api_domain = null){
-        tbis.api_domain = api_domain ? api_domain : window.api_domain;
-        this.client_id = client_id;
+    constructor(clientId = null, passcode = null, apiDomain = null){
+        this.apiDomain = apiDomain ? apiDomain : window.apiDomain;
+        this.clientId = clientId;
         this.passcode = passcode;
         this.logger = new Logger()
         this.headers = {
-            'X-Nexora-Account-Id': this.account_id,
+            'X-Nexora-Account-Id': this.clientId,
             'X-Nexora-Passcode': this.passcode,
             'Content-Type': 'application/json; charset=utf-8',
         }
@@ -16,7 +16,7 @@ export class API{
 
     request(url,payload={}){
         // console the payloads and endpoints
-        console.log(`${this.api_domain}/${url}`)
+        console.log(`${this.apiDomain}/${url}`)
         console.log(payload)
         console.log(this.headers)
         // fetch(`${this.api_domain}/${url}`, {

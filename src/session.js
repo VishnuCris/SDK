@@ -34,20 +34,20 @@ export class Session{
         const randomPart = Math.random().toString(36).substring(2, 10); // 8-char random string
         const sessionId =  `sess-${timestamp}-${randomPart}`;
 
-        this.setSession("nexora_session", {
-            "sesion_id":sessionId,
+        this.setSession("nexora_session", JSON.stringify({
+            "session_id":sessionId,
             "timestamp":timestamp,
             "session_number" : sessionOccurence + 1
-        });
+        }));
     }
 
     getSession(){
         const session = sessionStorage.getItem('nexora_session');
         if(!session){
             this.createSession();
-            return sessionStorage.getItem('nexora_session');
+            return JSON.parse(sessionStorage.getItem('nexora_session'));
         }
-        return session;
+        return JSON.parse(session);
     }
 
     setSession(key, value){

@@ -4,7 +4,7 @@ import { Session } from "./session";
 import { Logger } from "./logger";
 import { User } from './user';
 import { Helpers } from "./utilities/helper";
-import UAParser from 'ua-parser-js';
+import {UAParser} from 'ua-parser-js';
 import pkg from '../package.json' assert { type: 'json' };
 
 
@@ -17,7 +17,7 @@ export class Event{
         this.user = new User(this.clientId, this.passcode);
         this.helpers = new Helpers()
         this.session = new Session(clientId, passcode)
-        this.uaParser = new  new UAParser();
+        this.uaParser = new UAParser();
         this.inactivityTimeout = undefined;
     }
 
@@ -39,31 +39,31 @@ export class Event{
         }
       }
 
-    getDefaultEventProperties(ignorable_properties = []){
+    async getDefaultEventProperties(ignorable_properties = []){
         let properties = {}
         properties['timestamp'] = this.helpers.getCurrentTimeStamp()
-        properties['user'] = this.user.getUser()
+        properties['user'] = await this.user.getUser()
         properties['session_id'] = this.session.getSession()['session_id']
         properties['session_start_time'] = this.session.getSession()['timestamp']
         // device infos
-        let deviceInfo = this.uaParser.getResult();
+        let uaResult = this.uaParser.getResult();
         if(!ignorable_properties.includes('device')){
             properties['device'] = {
-                "os_name" : deviceInfo.os.name,
-                "os_version" : deviceInfo.os.version,
-                "device" : result.device.model || 'unknown',
-                "device_type" : result.device.type || 'desktop',
-                "browser": uaResult.browser.name,
-                "browser_version": uaResult.browser.version,
-                "userAgent": navigator.userAgent,
+                "os_name" : uaResult.os.name || 'unknown',
+                "os_version" : uaResult.os.version || 'unknown',
+                "device" : uaResult.device.model || 'unknown',
+                "device_type" : uaResult.device.type || 'desktop',
+                "browser": uaResult.browser.name || 'unknown',
+                "browser_version": uaResult.browser.version || 'unknown',
+                "userAgent": navigator.userAgent || 'unknown',
             }
         }
         if(!ignorable_properties.includes('app')){
             properties['app'] = {
-                "name": navigator.appName,
-                "version": navigator.appVersion,
+                "name": navigator.appName || 'unknown',
+                "version": navigator.appVersion || 'unknown',
                 // "build_number": "1234",
-                "sdk_version": pkg.version
+                "sdk_version": pkg.version || 'unknown'
             }
         }
         if(!ignorable_properties.includes('network')){
@@ -83,19 +83,19 @@ export class Event{
         return properties;
     }
 
-    push(event_name, payload){
+    async push(event_name, payload){
         this.api.request(Endpoints.pushEvent, {
             "event_name" : event_name,
             "event_attributes" : payload
         })
     }
 
-    websiteLaunched(properties = {}){
+    async websiteLaunched(properties = {}){
         let event_properties = {
             "event_name": "website_launched",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties()}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties()}
         // add additional event properties
         event_properties['event_properties'] = {
             "initial_launch": true, // logic for taking this
@@ -107,17 +107,19 @@ export class Event{
         };
         // push event
         this.api.request(Endpoints.pushEvent, event_properties)
+        // start session
+        this.sessionStarted()
 
     }
 
-    screenViewed(properties = {}){
+    async screenViewed(properties = {}){
         if(this.user.isUserExists()){
             this.sessionStarted()
             let event_properties = {
                 "event_name": "screen_viewed",
             }
             // default properties
-            event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+            event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
             // add additional event properties
             event_properties['event_properties'] = {
                 "screen_name": document.title,                    // You can also use custom mapping
@@ -130,16 +132,16 @@ export class Event{
             this.api.request(Endpoints.pushEvent, event_properties)
         }else{
             this.websiteLaunched()
-            this.reactInactivity()
+            this.resetInactivityTimer()
         }
     }
 
-    websiteClosed(properties = {}){
+    async websiteClosed(properties = {}){
         let event_properties = {
             "event_name": "website_closed",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
@@ -152,12 +154,12 @@ export class Event{
         this.session.endSession()
     }
 
-    sessionStarted(properties = {}){
+    async sessionStarted(properties = {}){
         let event_properties = {
             "event_name": "session_started",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -170,12 +172,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    sessionEnded(properties = {}){
+    async sessionEnded(properties = {}){
         let event_properties = {
             "event_name": "session_ended",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
@@ -186,12 +188,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    notificationRecieved(properties = {}){ // need to look for events to capture this
+    async notificationRecieved(properties = {}){ // need to look for events to capture this
         let event_properties = {
             "event_name": "notification_recieved",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -206,12 +208,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    notificationOpened(properties = {}){
+    async notificationOpened(properties = {}){
         let event_properties = {
             "event_name": "notification_opened",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -225,12 +227,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    notificationDismissed(properties = {}){
+    async notificationDismissed(properties = {}){
         let event_properties = {
             "event_name": "notification_dismissed",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -241,12 +243,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    deviceOnline(properties = {}){
+    async deviceOnline(properties = {}){
         let event_properties = {
             "event_name": "device_online",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties()}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties()}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -257,12 +259,12 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    deviceOffline(properties = {}){
+    async deviceOffline(properties = {}){
         let event_properties = {
             "event_name": "device_offline",
         }
         // default properties
-        event_properties = {...event_properties,...this.getDefaultEventProperties()}
+        event_properties = {...event_properties,...await this.getDefaultEventProperties()}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -272,7 +274,7 @@ export class Event{
         this.api.request(Endpoints.pushEvent, event_properties)
     }
 
-    resetInactivityTimer() {
+    async resetInactivityTimer() {
         clearTimeout(this.inactivityTimeout);
         this.inactivityTimeout = setTimeout(() => {
             this.event.sessionEnded()
