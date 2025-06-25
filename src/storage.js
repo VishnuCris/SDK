@@ -1,8 +1,14 @@
 import { Logger } from "./logger";
+import localforage from "localforage";
 
 export class Storage{
     constructor(){
-
+      this.localForage = localforage;
+      this.localForage.config({
+        name: "WebEventSDK",
+        storeName: "eventQueue", // used as IndexedDB object store name
+      })
+      this.localForage.setDriver(this.localForage.INDEXEDDB)
     }
 
     autoWrapMethods() {
@@ -23,18 +29,26 @@ export class Storage{
         }
       }
 
-    set(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
+    async set(key, value) {
+        // localStorage.setItem(key, JSON.stringify(value));
+        await this.localForage.setItem(key, value);
     }
-    get(key) {
-        const val = localStorage.getItem(key);
-        try {
-            return JSON.parse(val);
-        } catch {
-            return null;
-        }
+    async get(key) {
+        // const val = localStorage.getItem(key);
+        // try {
+        //     return JSON.parse(val);
+        // } catch {
+        //     return null;
+        // }
+        const val = await this.localForage.getItem(key);
+        return val;
     }
-    remove(key) {
-        localStorage.removeItem(key);
+    async remove(key) {
+      // localStorage.removeItem(key);
+      await this.localForage.removeItem(key);
+    }
+    async clear(key) {
+      // localStorage.removeItem(key);
+      await this.localForage.clear();
     }
 }

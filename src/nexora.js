@@ -1,17 +1,37 @@
 
+import { API } from "./api/api";
+import { Endpoints } from "./api/endpoints";
 import { Event } from "./event";
 import { Logger } from "./logger";
+import BatchFlusher from "./modules/batch_flusher";
+import EventBuffer from "./modules/event_buffer";
+import EventDispatcher from "./modules/event_dispatcher";
+import SDKConfig from "./modules/sdk_config";
 
-export class Nexora{
-    constructor(clientId = null, passcode = null, apiDomain = window.apiDomain){
+export class NexoraCore{
+    constructor(clientId = null, passcode = null, apiDomain = window.mexoraCore?.apiDomain){
+        // setting common properties
         this.clientId = clientId;
         this.passcode = passcode;
         this.apiDomain = apiDomain;
-        // apply this api domain to windows
-        window.apiDomain = apiDomain;
+        // instance of api
+        this.api = new API(clientId, passcode, apiDomain)
+        // instance of event
         this.event = new Event(clientId, passcode)
+        // set config of sdk
+        this.config = new SDKConfig();
+        // create instance for event modules
+        this.eventBuffer = new EventBuffer()
+        this.eventDispatcher = new EventDispatcher(
+            Endpoints.pushEvent,
+            this.config.get('batch_size'),
+            this.api
+        )
+        this.batchFlusher = new BatchFlusher(this.eventBuffer, this.eventDispatcher, this.config)
         // register all events
         this.registerAllEvents()
+        // start batch flusher
+        this.batchFlusher.start();
     }
 
     registerAllEvents(){
@@ -86,4 +106,7 @@ export class Nexora{
             Logger.logError(event.reason, "unhandled_promise_rejection");
         });
     }
+
+    // get config of sdk
+
 }

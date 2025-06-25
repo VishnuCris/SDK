@@ -10,7 +10,8 @@ export class User{
     constructor(clientId = null, passcode = null){
         this.clientId = clientId;
         this.passcode = passcode;
-        this.api = new API(clientId, passcode)
+        // this.api = new API(clientId, passcode)
+        this.api = window.nexoraCore?.api
         this.storage = new Storage();
         this.helpers = new Helpers();
         this.session = new Session(clientId, passcode);
@@ -38,7 +39,7 @@ export class User{
     async createUser(payload){
         // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
-        this.storage.set(
+        await this.storage.set(
             "user",
             {
                 "id": userId,
@@ -51,10 +52,10 @@ export class User{
     }
 
     async getUser(){
-        let user = this.storage.get("user")
+        let user = await this.storage.get("user")
         if(!user){
             await this.createUser()
-            return this.storage.get("user")
+            return await this.storage.get("user")
         }
         return user
     }
@@ -63,11 +64,11 @@ export class User{
         let user = this.storage.get("user")
         user = {...user,...userProperties}
         let response = await this.api.request(Endpoints.userlogin, user);
-        this.storeUser(response.data) // in this response have to be user object may be change in the prespective of api logics
+        await this.storeUser(response.data) // in this response have to be user object may be change in the prespective of api logics
     }
 
-    onUserLogout(){
-        this.unStoreUser();
+    async onUserLogout(){
+        await this.unStoreUser();
         this.api.request(Endpoints.userlogout); // discuss whether we have to hit api incase of logout
         // we have to look a logic for create new user on logout, by now if the application refreshed then user creation happened and website launch event called for new anonymous user or if we create a new user on logout but website launch event not called for new anonmous user in this case screen viewed event is called.
         // this.createUser();
@@ -75,24 +76,24 @@ export class User{
     }
 
     async pushProfile(userProperties){
-        let user = this.storage.get("user")
+        let user = await this.storage.get("user")
         user = {...user,...userProperties}
         let response = this.api.request(Endpoints.pushProfile, user); //  discuss whether we have to hit api incase of profilepush
-        this.storeUser(response.data)
+        await this.storeUser(response.data)
     }
 
-    storeUser(userObject){
-        this.storage.set(
+    async storeUser(userObject){
+        await this.storage.set(
             "user",
             userObject
         )
     }
 
-    unStoreUser(){
-        this.storage.remove("user")
+    async unStoreUser(){
+        await this.storage.remove("user")
     }
 
-    isUserExists(){
-        return this.storage.get('user')
+    async isUserExists(){
+        return await this.storage.get('user')
     }
 }

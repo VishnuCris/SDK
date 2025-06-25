@@ -3,7 +3,7 @@ import { Logger } from "../logger";
 
 export class API{
     constructor(clientId = null, passcode = null, apiDomain = null){
-        this.apiDomain = apiDomain ? apiDomain : window.apiDomain;
+        this.apiDomain = apiDomain ? apiDomain : window.nexoraCore?.apiDomain;
         this.clientId = clientId;
         this.passcode = passcode;
         this.logger = new Logger()
@@ -14,7 +14,7 @@ export class API{
         }
     }
 
-    request(url,payload={}){
+    async request(url,payload={}){
         // console the payloads and endpoints
         console.log(`${this.apiDomain}/${url}`)
         console.log(payload)

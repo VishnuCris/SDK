@@ -13,7 +13,7 @@ export class Event{
     constructor(clientId = null, passcode = null){
         this.clientId = clientId;
         this.passcode = passcode;
-        this.api = new API(clientId, passcode)
+        // this.api = new API(clientId, passcode)
         this.user = new User(this.clientId, this.passcode);
         this.helpers = new Helpers()
         this.session = new Session(clientId, passcode)
@@ -84,13 +84,23 @@ export class Event{
     }
 
     async push(event_name, payload){
-        this.api.request(Endpoints.pushEvent, {
-            "event_name" : event_name,
-            "event_attributes" : payload
-        })
+        // this.api.request(Endpoints.pushEvent, {
+        //     "event_name" : event_name,
+        //     "event_attributes" : payload
+        // })
+        // pushing in queue
+        this.enqueEvents(
+            {
+                "event_name" : event_name,
+                "event_attributes" : payload
+            }, 
+            Endpoints.pushEvent, 
+        )
     }
 
     async websiteLaunched(properties = {}){
+        console.log(window.nexoraCore)
+        console.log("------")
         let event_properties = {
             "event_name": "website_launched",
         }
@@ -105,11 +115,14 @@ export class Event{
             "source_campaign": null,
             ...properties
         };
+        // pushing in queue
+        this.enqueEvents(event_properties, Endpoints.pushEvent, function(){
+            this.sessionStarted()            
+        })
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
         // start session
-        this.sessionStarted()
-
+        // this.sessionStarted()
     }
 
     async screenViewed(properties = {}){
@@ -128,8 +141,10 @@ export class Event{
                 viewDurationSeconds: 0, // we have to take by listening other events (beforeload)    
                 ...properties
             };
+            // pushing in queue
+            this.enqueEvents(event_properties, Endpoints.pushEvent)
             // push event
-            this.api.request(Endpoints.pushEvent, event_properties)
+            // this.api.request(Endpoints.pushEvent, event_properties)
         }else{
             this.websiteLaunched()
             this.resetInactivityTimer()
@@ -148,10 +163,14 @@ export class Event{
             "reason": "user_terminated",
             ...properties
         };
-        // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
-        // session closed
-        this.session.endSession()
+        // pushing in queue
+        this.enqueEvents(event_properties, Endpoints.pushEvent, function(){
+            this.endSession()            
+        })
+        // // push event
+        // this.api.request(Endpoints.pushEvent, event_properties)
+        // // session closed
+        // this.session.endSession()
     }
 
     async sessionStarted(properties = {}){
@@ -168,8 +187,10 @@ export class Event{
             "screens_viewed_count": "1", //need to think a logic for this
             ...properties
         };
+        // pushing in queue
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async sessionEnded(properties = {}){
@@ -184,8 +205,10 @@ export class Event{
             "reason": "user_terminated",
             ...properties
         };
+        // enque events
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async notificationRecieved(properties = {}){ // need to look for events to capture this
@@ -204,8 +227,10 @@ export class Event{
             // "body": "Shop now and get 50% off on all electronics!",
             ...properties
         };
+        // enque events
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async notificationOpened(properties = {}){
@@ -223,8 +248,10 @@ export class Event{
             // "deep_link_url": "your_app://products?category=electronics",
             ...properties
         };
+        //enque events
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async notificationDismissed(properties = {}){
@@ -239,8 +266,10 @@ export class Event{
             // "notification_id": "notif_promo_xyz789",
             ...properties
         };
+        // enque events
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async deviceOnline(properties = {}){
@@ -255,8 +284,10 @@ export class Event{
             "connection_type": event_properties["network"]["connection_type"],
             ...properties
         };
+        // qnque events
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async deviceOffline(properties = {}){
@@ -270,8 +301,10 @@ export class Event{
         event_properties['event_properties'] = {
             ...properties
         };
+        // enque events
+        this.enqueEvents(event_properties, Endpoints.pushEvent)
         // push event
-        this.api.request(Endpoints.pushEvent, event_properties)
+        // this.api.request(Endpoints.pushEvent, event_properties)
     }
 
     async resetInactivityTimer() {
@@ -279,5 +312,18 @@ export class Event{
         this.inactivityTimeout = setTimeout(() => {
             this.event.sessionEnded()
         }, 20 * 60 * 1000); // 20 minutes
+    }
+
+    enqueEvents(event_properties, endpoint, executables = null){
+        // pushing in queue
+        window.nexoraCore.eventBuffer.enqueue(
+            {
+                "data" : event_properties,
+                "endpoint" : endpoint,
+                "executables" : executables
+            }
+        )
+        // flush batch if event size reached threshold size
+        window.nexoraCore.batchFlusher.tryImmediateFlush()
     }
 }
