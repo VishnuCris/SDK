@@ -10,11 +10,11 @@ import pkg from '../package.json' assert { type: 'json' };
 
 
 export class Event{
-    constructor(clientId = null, passcode = null){
+    constructor(clientId = null, passcode = null, user){
         this.clientId = clientId;
         this.passcode = passcode;
         // this.api = new API(clientId, passcode)
-        this.user = new User(this.clientId, this.passcode);
+        this.user = user;
         this.helpers = new Helpers()
         this.session = new Session(clientId, passcode)
         this.uaParser = new UAParser();
@@ -42,7 +42,7 @@ export class Event{
     async getDefaultEventProperties(ignorable_properties = []){
         let properties = {}
         properties['timestamp'] = this.helpers.getCurrentTimeStamp()
-        properties['user'] = await this.user.getUser()
+        properties['user'] = await this.user.get()
         properties['session_id'] = this.session.getSession()['session_id']
         properties['session_start_time'] = this.session.getSession()['timestamp']
         // device infos
@@ -103,9 +103,10 @@ export class Event{
         console.log("------")
         let event_properties = {
             "event_name": "website_launched",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties()}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties()}
         // add additional event properties
         event_properties['event_properties'] = {
             "initial_launch": true, // logic for taking this
@@ -126,13 +127,14 @@ export class Event{
     }
 
     async screenViewed(properties = {}){
-        if(this.user.isUserExists()){
+        if(this.user.isExists()){
             this.sessionStarted()
             let event_properties = {
                 "event_name": "screen_viewed",
+                "event_attributes" : {}
             }
             // default properties
-            event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+            event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
             // add additional event properties
             event_properties['event_properties'] = {
                 "screen_name": document.title,                    // You can also use custom mapping
@@ -154,9 +156,10 @@ export class Event{
     async websiteClosed(properties = {}){
         let event_properties = {
             "event_name": "website_closed",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
@@ -176,9 +179,10 @@ export class Event{
     async sessionStarted(properties = {}){
         let event_properties = {
             "event_name": "session_started",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -196,9 +200,10 @@ export class Event{
     async sessionEnded(properties = {}){
         let event_properties = {
             "event_name": "session_ended",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
@@ -214,9 +219,10 @@ export class Event{
     async notificationRecieved(properties = {}){ // need to look for events to capture this
         let event_properties = {
             "event_name": "notification_recieved",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -236,9 +242,10 @@ export class Event{
     async notificationOpened(properties = {}){
         let event_properties = {
             "event_name": "notification_opened",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -257,9 +264,10 @@ export class Event{
     async notificationDismissed(properties = {}){
         let event_properties = {
             "event_name": "notification_dismissed",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties(['network'])}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties(['network'])}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -275,9 +283,10 @@ export class Event{
     async deviceOnline(properties = {}){
         let event_properties = {
             "event_name": "device_online",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties()}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties()}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {
@@ -293,9 +302,10 @@ export class Event{
     async deviceOffline(properties = {}){
         let event_properties = {
             "event_name": "device_offline",
+            "event_attributes" : {}
         }
         // default properties
-        event_properties = {...event_properties,...await this.getDefaultEventProperties()}
+        event_properties['event_attributes'] = {...event_properties['event_attributes'],...await this.getDefaultEventProperties()}
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['event_properties'] = {

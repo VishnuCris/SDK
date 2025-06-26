@@ -36,7 +36,7 @@ export class User{
         }
       }
 
-    async createUser(payload){
+    async create(payload){
         // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
         await this.storage.set(
@@ -51,24 +51,24 @@ export class User{
 
     }
 
-    async getUser(){
+    async get(){
         let user = await this.storage.get("user")
         if(!user){
-            await this.createUser()
+            await this.create()
             return await this.storage.get("user")
         }
         return user
     }
 
-    async onUserLogin(userProperties){
+    async login(userProperties){
         let user = this.storage.get("user")
         user = {...user,...userProperties}
         let response = await this.api.request(Endpoints.userlogin, user);
-        await this.storeUser(response.data) // in this response have to be user object may be change in the prespective of api logics
+        await this.store(response.data) // in this response have to be user object may be change in the prespective of api logics
     }
 
-    async onUserLogout(){
-        await this.unStoreUser();
+    async logout(){
+        await this.unStore();
         this.api.request(Endpoints.userlogout); // discuss whether we have to hit api incase of logout
         // we have to look a logic for create new user on logout, by now if the application refreshed then user creation happened and website launch event called for new anonymous user or if we create a new user on logout but website launch event not called for new anonmous user in this case screen viewed event is called.
         // this.createUser();
@@ -79,21 +79,21 @@ export class User{
         let user = await this.storage.get("user")
         user = {...user,...userProperties}
         let response = this.api.request(Endpoints.pushProfile, user); //  discuss whether we have to hit api incase of profilepush
-        await this.storeUser(response.data)
+        await this.store(response.data)
     }
 
-    async storeUser(userObject){
+    async store(userObject){
         await this.storage.set(
             "user",
             userObject
         )
     }
 
-    async unStoreUser(){
+    async unStore(){
         await this.storage.remove("user")
     }
 
-    async isUserExists(){
+    async isExists(){
         return await this.storage.get('user')
     }
 }

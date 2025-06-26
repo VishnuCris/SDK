@@ -7,6 +7,7 @@ import BatchFlusher from "./modules/batch_flusher";
 import EventBuffer from "./modules/event_buffer";
 import EventDispatcher from "./modules/event_dispatcher";
 import SDKConfig from "./modules/sdk_config";
+import { User } from "./user";
 
 export class NexoraCore{
     constructor(clientId = null, passcode = null, apiDomain = window.mexoraCore?.apiDomain){
@@ -16,8 +17,10 @@ export class NexoraCore{
         this.apiDomain = apiDomain;
         // instance of api
         this.api = new API(clientId, passcode, apiDomain)
+        // instance of user
+        this.user = new User(this.clientId, this.passcode);
         // instance of event
-        this.event = new Event(clientId, passcode)
+        this.event = new Event(clientId, passcode, this.user)
         // set config of sdk
         this.config = new SDKConfig();
         // create instance for event modules
@@ -29,12 +32,12 @@ export class NexoraCore{
         )
         this.batchFlusher = new BatchFlusher(this.eventBuffer, this.eventDispatcher, this.config)
         // register all events
-        this.registerAllEvents()
+        this.registerSystemEvents()
         // start batch flusher
         this.batchFlusher.start();
     }
 
-    registerAllEvents(){
+    registerSystemEvents(){
         this.listenWebsiteLaunchedEvent()
         this.listenWebsiteClosedhEvent()
         this.listenDeviceOnlineEvent()
@@ -49,7 +52,6 @@ export class NexoraCore{
         window.addEventListener('load', () => {
             this.event.screenViewed()
         });
-          
     }
 
     listenWebsiteClosedhEvent(){

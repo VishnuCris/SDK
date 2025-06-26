@@ -8,8 +8,8 @@ export class API{
         this.passcode = passcode;
         this.logger = new Logger()
         this.headers = {
-            'X-Nexora-Account-Id': this.clientId,
-            'X-Nexora-Passcode': this.passcode,
+            'X-Nexora-Client-ID': this.clientId,
+            'X-Nexora-Key': this.passcode,
             'Content-Type': 'application/json; charset=utf-8',
         }
     }
