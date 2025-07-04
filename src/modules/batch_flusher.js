@@ -1,11 +1,11 @@
 
 
 export default class BatchFlusher {
-    constructor( buffer, dispatcher, config ) {
+    constructor( buffer = window.nexora.eventBuffer, dispatcher = window.nexora.eventDispatcher, config = window.nexora.config ) {
       this.buffer = buffer;
       this.dispatcher = dispatcher;
       this.config = config;
-      this.flushInterval = this.config.get("flush_interval") || 10000; // ms
+      this.flushInterval = 2000; // ms
       this.batchSize = this.config.get("batch_size") || 10;
   
       this.timer = null;
@@ -24,26 +24,33 @@ export default class BatchFlusher {
     }
       
     stop() {
-    if (this.timer) {
-        clearTimeout(this.timer);
-        this.timer = null;
-    }
+      if (this.timer) {
+          clearTimeout(this.timer);
+          this.timer = null;
+      } 
     }
   
     async flush() {
-      if (this.buffer.isEmpty()) return;
+      if (this.buffer.isSystemEventsEmpty() && this.buffer.isCustomEventsEmpty()) return;
   
-      const events = [];
-      for (let i = 0; i < this.batchSize && !this.buffer.isEmpty(); i++) {
-        events.push(this.buffer.dequeue()); // get 1 by 1
+      const systemEvents = [];
+      for (let i = 0; i < this.batchSize && !this.buffer.isSystemEventsEmpty(); i++) {
+        systemEvents.push(this.buffer.dequeueSystemEvents()); // get 1 by 1
+      }
+
+      const customEvents = [];
+      for (let i = 0; i < this.batchSize && !this.buffer.isCustomEventsEmpty(); i++) {
+        customEvents.push(this.buffer.dequeueCustomEvents()); // get 1 by 1
       }
   
       try {
-        await this.dispatcher.dispatch(events);
+        await this.dispatcher.dispatchSystemEvents(systemEvents);
+        await this.dispatcher.dispatchCustomEvents(customEvents);
       } catch (e) {
         console.error("Dispatch failed", e);
         // Requeue or persist if needed
-        events.forEach(event => this.buffer.enqueue(event));
+        systemEvents.forEach(event => this.buffer.enqueueSystemEvents(event));
+        customEvents.forEach(event => this.buffer.enqueueCustomEvents(event));
       }
     }
   

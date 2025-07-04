@@ -3,7 +3,7 @@ import { Logger } from "../logger";
 
 export class API{
     constructor(clientId = null, passcode = null, apiDomain = null){
-        this.apiDomain = apiDomain ? apiDomain : window.nexoraCore?.apiDomain;
+        this.apiDomain = "http://34.18.41.215:5000/v1";
         this.clientId = clientId;
         this.passcode = passcode;
         this.logger = new Logger()
@@ -16,10 +16,13 @@ export class API{
 
     async request(url,payload={}){
         // console the payloads and endpoints
-        console.log(`${this.apiDomain}/${url}`)
+        payload["platform"] = "web"
+        payload["client_id"] = this.clientId
+        // console.log(`http://34.18.41.215:5000/v1/${url}`)
         console.log(payload)
-        console.log(this.headers)
-        // fetch(`${this.api_domain}/${url}`, {
+        return {"data":payload}
+        // console.log(this.headers)
+        // fetch(`http://34.18.41.215:5000/v1/${url}`, {
         //     method: 'POST',
         //     headers: this.headers,
         //     body: JSON.stringify(payload)

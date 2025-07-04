@@ -2,34 +2,53 @@
 
 export default class EventBuffer {
     constructor() {
-      this.queue = [];
+      this.systemQueue = [];
+      this.customEventsQueue = []
     }
   
-    enqueue(event) {
-      this.queue.push(event);
+    enqueueSystemEvents(event) {
+      this.systemQueue.push(event);
+    }
+
+    enqueueCustomEvents(event){
+      this.customEventsQueue.push(event)
     }
   
-    dequeueAll() {
-      const events = [...this.queue];
-      this.queue = [];
+    dequeueSystemEvents() {
+      const events = [...this.systemQueue];
+      this.systemQueue = [];
+      return events;
+    }
+
+    dequeueCustomEvents() {
+      const events = [...this.customEventsQueue];
+      this.customEventsQueue = [];
       return events;
     }
 
     dequeue() {
         if (this.isEmpty()) return null;
-        return this.queue.shift();
+        return this.systemQueue.shift();
     }
   
-    peek() {
-      return [...this.queue];
+    peekSystemEvent() {
+      return [...this.systemQueue];
     }
-  
-    isEmpty() {
-      return this.queue.length === 0;
+
+    peekCustomEvent() {
+      return [...this.customEventsQueue];
+    }
+
+    isSystemEventsEmpty() {
+      return this.systemQueue.length === 0;
+    }
+
+    isCustomEventsEmpty(){
+      return this.customEventsQueue.length === 0;
     }
   
     size() {
-      return this.queue.length;
+      return (this.systemQueue.length + this.customEventsQueue.length);
     }
   }
   

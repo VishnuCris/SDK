@@ -10,7 +10,10 @@ import SDKConfig from "./modules/sdk_config";
 import { User } from "./user";
 
 export class NexoraCore{
-    constructor(clientId = null, passcode = null, apiDomain = window.mexoraCore?.apiDomain){
+    constructor(clientId, passcode, apiDomain){
+        console.log(clientId)
+        console.log(passcode)
+        console.log(apiDomain)
         // setting common properties
         this.clientId = clientId;
         this.passcode = passcode;
@@ -18,7 +21,7 @@ export class NexoraCore{
         // instance of api
         this.api = new API(clientId, passcode, apiDomain)
         // instance of user
-        this.user = new User(this.clientId, this.passcode);
+        this.user = new User(this.clientId, this.passcode, this.api);
         // instance of event
         this.event = new Event(clientId, passcode, this.user)
         // set config of sdk
@@ -26,9 +29,8 @@ export class NexoraCore{
         // create instance for event modules
         this.eventBuffer = new EventBuffer()
         this.eventDispatcher = new EventDispatcher(
-            Endpoints.pushEvent,
+            this.api,
             this.config.get('batch_size'),
-            this.api
         )
         this.batchFlusher = new BatchFlusher(this.eventBuffer, this.eventDispatcher, this.config)
         // register all events
