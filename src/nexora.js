@@ -9,7 +9,7 @@ import EventDispatcher from "./modules/event_dispatcher";
 import SDKConfig from "./modules/sdk_config";
 import { User } from "./user";
 
-export class NexoraCore{
+export class NexoraCore{    
     constructor(clientId, passcode, apiDomain){
         // instance of api
         this.api = new API(clientId, passcode, apiDomain)
