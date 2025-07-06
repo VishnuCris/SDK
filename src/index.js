@@ -1,14 +1,14 @@
 import { NexoraCore } from './nexora';
 
 class Nexora {
-    constructor(clientId, passcode, apiDomain) {
+    constructor(clientId, apiKey, apiDomain) {
         if (Nexora._instance) {
             console.log('Returning existing NexoraCore instance');
             return Nexora._instance;
         }
 
         console.log('Initializing Nexora SDK...');
-        const instance = new NexoraCore(clientId, passcode, apiDomain);
+        const instance = new NexoraCore(clientId, apiKey, apiDomain);
         console.log(instance)
         console.log("instance")
         window.nexora = instance;

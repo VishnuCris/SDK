@@ -4,9 +4,9 @@ import { Helpers } from "./utilities/helper";
 import { Logger } from "./logger";
 
 export class Session{
-    constructor(clientId = null, passcode = null){
+    constructor(clientId = null, apiKey = null){
         this.clientId = clientId;
-        this.passcode = passcode;
+        this.apiKey = apiKey;
         this.storage = new Storage();
         this.helpers = new Helpers();
     }

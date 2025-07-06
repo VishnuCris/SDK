@@ -7,15 +7,15 @@ import { Session } from './session';
 import { Event } from './event';
 import { Logger } from './logger';
 export class User{
-    constructor(clientId = null, passcode = null, api = window.nexora?.api){
+    constructor(clientId = null, apiKey = null, api = window.nexora?.api){
         this.clientId = clientId;
-        this.passcode = passcode;
-        // this.api = new API(clientId, passcode)
-        this.api = api
+        this.apiKey = apiKey;
+        // this.api = new API(clientId, apiKey)
+        this.api = api;
         this.storage = new Storage();
         this.helpers = new Helpers();
-        this.session = new Session(clientId, passcode);
-        // this.event = new Event(clientId, passcode)
+        this.session = new Session(clientId, apiKey);
+        // this.event = new Event(clientId, apiKey)
     }
 
     autoWrapMethods() {
@@ -36,7 +36,7 @@ export class User{
         }
       }
 
-    async create(payload){
+    async create(userProperties = {}){
         // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
         let userObject = {
@@ -47,8 +47,12 @@ export class User{
             "user",
             userObject
         )
-        let response = await this.api.request(Endpoints.userRegister, userObject);
-        await this.store(response.data) // in this response have to be user object may be change in the prespective of api logics
+        let event_properties = await nexora.event.getDefaultEventProperties()
+        event_properties['user'] = {...event_properties['user'], ...userObject}
+        event_properties["evemt_name"] = "user_creation"
+        userProperties['metadata'] = {...userProperties, ...userObject}
+        // let responseData = await this.api.request(Endpoints.userRegister, event_properties);
+        // await this.store(responseData) // in this response have to be user object may be change in the prespective of api logics
         // create a session for the current user
         this.session.createSession()
 
@@ -70,17 +74,22 @@ export class User{
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...user}
         event_properties["evemt_name"] = "user_login"
-        let response = await this.api.request(Endpoints.userlogin, event_properties);
-        if(response?.data)
-            await this.store(response.data) // in this response have to be user object may be change in the prespective of api logics
+        userProperties['metadata'] = userProperties
+        let responseData = await this.api.request(Endpoints.userlogin, event_properties);
+        if(responseData)
+            await this.store(responseData) // in this response have to be user object may be change in the prespective of api logics
     }
 
-    async logout(){
+    async logout(userProperties = {}){
         await this.unStore();
-        this.api.request(Endpoints.userlogout); // discuss whether we have to hit api incase of logout
+        let event_properties = await nexora.event.getDefaultEventProperties()
+        event_properties['user'] = {...event_properties['user'], ...userObject}
+        event_properties["evemt_name"] = "user_logout"
+        userProperties['metadata'] = userProperties
+        await this.api.request(Endpoints.userlogout); // discuss whether we have to hit api incase of logout
         // we have to look a logic for create new user on logout, by now if the application refreshed then user creation happened and website launch event called for new anonymous user or if we create a new user on logout but website launch event not called for new anonmous user in this case screen viewed event is called.
-        // this.createUser();
-        // this.event.website_launched()
+        await this.create();
+        await this.event.website_launched()
     }
 
     async pushProfile(userProperties){
@@ -89,9 +98,10 @@ export class User{
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user']['additional_properties'] = user['additional_properties']
         event_properties["evemt_name"] = "profile_push"
-        let response = this.api.request(Endpoints.pushProfile, event_properties); //  discuss whether we have to hit api incase of profilepush
-        if(response?.data)
-            await this.store(response.data)
+        userProperties['metadata'] = userProperties
+        let responseData = await this.api.request(Endpoints.pushProfile, event_properties); //  discuss whether we have to hit api incase of profilepush
+        if(responseData)
+            await this.store(responseData)
     }
 
     async store(userObject){
@@ -108,5 +118,21 @@ export class User{
 
     async isExists(){
         return await this.storage.get('user')
+    }
+
+    async failedEvents(event_properties, endpoint){
+        console.log("********* inside user failed evebts backup ***********")
+        let failed = await this.getFailedEvents()
+        failed.push(
+            {
+                "endpoint" : endpoint,
+                "event_properties" : event_properties
+            }
+        )
+        await this.storage.set("user_failed_events", failed)
+    }
+
+    async getFailedEvents(){
+        return await this.storage.get("user_failed_events") || []
     }
 }

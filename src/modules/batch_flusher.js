@@ -31,32 +31,28 @@ export default class BatchFlusher {
     }
   
     async flush() {
-      if (await this.buffer.isSystemEventsEmpty() && await this.buffer.isCustomEventsEmpty()) return;
-      
-      const systemEvents = await this.buffer.dequeueSystemEvents()
-      console.log(systemEvents)
-      console.log("((((systemEvents))))")
-      // const systemEvents = [];
-      // for (let i = 0; i < this.batchSize && !await this.buffer.isSystemEventsEmpty(); i++) {
-        // systemEvents.push(await this.buffer.dequeueSystemEvents()); // get 1 by 1
-      // }
-
+      // add offline logic here
+      if (await this.buffer.isSystemEventsEmpty() && await this.buffer.isCustomEventsEmpty() && await window.nexora.user.getFailedEvents()) return;
       const customEvents = await this.buffer.dequeueCustomEvents()
-      console.log(customEvents)
-      console.log("((((customEvents))))")
-      // const customEvents = [];
-      // for (let i = 0; i < this.batchSize && !this.buffer.isCustomEventsEmpty(); i++) {
-      //   customEvents.push(await this.buffer.dequeueCustomEvents()); // get 1 by 1
-      // }
-  
+      const userFailedEvents = await window.nexora.user.getFailedEvents()
+      const systemEvents = await this.buffer.dequeueSystemEvents()
       try {
         await this.dispatcher.dispatchSystemEvents(systemEvents);
-        await this.dispatcher.dispatchCustomEvents(customEvents);
-      } catch (e) {
-        console.error("Dispatch failed", e);
-        // Requeue or persist if needed
+      }catch(e){
         systemEvents.forEach(async (event) => await this.buffer.enqueueSystemEvents(event));
+      }
+
+      try{
+        await this.dispatcher.dispatchCustomEvents(customEvents);
+      }catch(e){
         customEvents.forEach(async (event) => await this.buffer.enqueueCustomEvents(event));
+      }
+
+      try{
+        // user failed events
+        await this.dispatcher.dispatchFailedUserEvents(userFailedEvents);
+      }catch(e){
+        userFailedEvents.forEach(async (event)  => await window.nexora.user.failedEvents(event?.event_properties, event?.endpoint));
       }
     }
   

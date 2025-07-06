@@ -19,7 +19,7 @@ export default class EventDispatcher {
       try {
         await this.api.request(Endpoints.systemEvent, payload);
       } catch (e) {
-        this.Logger.logError("Dispatch failed", e);
+        Logger.logError("Dispatch failed", e);
         throw e; // So caller can decide to retry or persist
       } finally {
         this.isSending = false;
@@ -35,7 +35,23 @@ export default class EventDispatcher {
       try {
         await this.api.request(Endpoints.customEvent, payload);
       } catch (e) {
-        this.Logger.logError("Dispatch failed", e);
+        Logger.logError("Dispatch failed", e);
+        throw e; // So caller can decide to retry or persist
+      } finally {
+        this.isSending = false;
+      }
+    }
+
+    async dispatchFailedUserEvents(events){
+      if (this.isSending || events.length === 0) return;
+  
+      this.isSending = true;
+      const payload = events.slice(0, this.batchSize);
+  
+      try {
+        await this.api.request(Endpoints.customEvent, payload);
+      } catch (e) {
+        Logger.logError("Dispatch failed", e);
         throw e; // So caller can decide to retry or persist
       } finally {
         this.isSending = false;

@@ -8,15 +8,18 @@ import EventBuffer from "./modules/event_buffer";
 import EventDispatcher from "./modules/event_dispatcher";
 import SDKConfig from "./modules/sdk_config";
 import { User } from "./user";
+import { Device } from "./device";
 
 export class NexoraCore{    
-    constructor(clientId, passcode, apiDomain){
+    constructor(clientId, apiKey, apiDomain){
         // instance of api
-        this.api = new API(clientId, passcode, apiDomain)
+        this.api = new API(clientId, apiKey, apiDomain)
         // instance of user
-        this.user = new User(this.clientId, this.passcode, this.api);
+        this.user = new User(this.clientId, this.apiKey, this.api);
         // instance of event
-        this.event = new Event(clientId, passcode, this.user)
+        this.event = new Event(clientId, apiKey, this.user)
+        // instance of device
+        this.device = new Device()
         // set config of sdk
         this.config = new SDKConfig();
         // create instance for event modules

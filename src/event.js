@@ -10,12 +10,12 @@ import pkg from '../package.json' assert { type: 'json' };
 
 
 export class Event{
-    constructor(clientId = null, passcode = null, user){
+    constructor(clientId = null, apiKey = null, user){
         this.clientId = clientId;
-        this.passcode = passcode;
+        this.apiKey = apiKey;
         this.user = user;
         this.helpers = new Helpers()
-        this.session = new Session(clientId, passcode)
+        this.session = new Session(clientId, apiKey)
         this.uaParser = new UAParser();
         this.inactivityTimeout = undefined;
     }
@@ -66,7 +66,7 @@ export class Event{
         }
         if(!ignorable_properties.includes('network')){
             properties['network'] = {
-                "connection_type" : navigator.connection?.effectiveType || 'unknown'
+                "connection_type" : navigator?.connection?.effectiveType || 'unknown'
             }
         }
         if(!ignorable_properties.includes('network')){
@@ -85,7 +85,7 @@ export class Event{
         this.enqueEvents(
             {
                 "event_name" : event_name,
-                "event_properties" : payload
+                "metadata" : payload
             }, 
             null,
             true
@@ -95,10 +95,10 @@ export class Event{
     async websiteLaunched(properties = {}){
         let event_properties = {
             "event_name": "website_launched",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             "initial_launch": true, // logic for taking this
             "from_background": false, // we can omit this after discussion
             "deep_link_url": null, // we can omit this after discussion
@@ -107,7 +107,7 @@ export class Event{
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties()}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
         // pushing in queue
         this.enqueEvents(event_properties, function(){
             this.sessionStarted();
@@ -121,10 +121,10 @@ export class Event{
             // this.sessionStarted()
             let event_properties = {
                 "event_name": "screen_viewed",
-                "event_properties" : {}
+                "metadata" : {}
             }
             // add additional event properties
-            event_properties['event_properties'] = {
+            event_properties['metadata'] = {
                 "screen_name": document.title,                    // You can also use custom mapping
                 "url": window.location.href,
                 "referrer": document.referrer || null,           // Previous page URL
@@ -132,7 +132,7 @@ export class Event{
                 ...properties
             };
             // default properties
-            event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+            event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
             // pushing in queue
             this.enqueEvents(event_properties)
         }else{
@@ -144,16 +144,16 @@ export class Event{
     async websiteClosed(properties = {}){
         let event_properties = {
             "event_name": "website_closed",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             "session_duration_ms": this.session.getSessionDuration(),
             "reason": "user_terminated",
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         // pushing in queue
         this.enqueEvents(event_properties, function(){
             this.endSession()            
@@ -163,17 +163,17 @@ export class Event{
     async sessionStarted(properties = {}){
         let event_properties = {
             "event_name": "session_started",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             "duration_ms": event_properties['user']?.is_logged_in ? false : true,
             "session_number": this.session.getSessionOccurence(),
             "screens_viewed_count": "1", //need to think a logic for this
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         // pushing in queue
         this.enqueEvents(event_properties)
     }
@@ -181,16 +181,16 @@ export class Event{
     async sessionEnded(properties = {}){
         let event_properties = {
             "event_name": "session_ended",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             "session_duration_ms": this.session.getSessionDuration(),
             "reason": "user_terminated",
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         // enque events
         this.enqueEvents(event_properties)
     }
@@ -198,11 +198,11 @@ export class Event{
     async notificationRecieved(properties = {}){ // need to look for events to capture this
         let event_properties = {
             "event_name": "notification_recieved",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             // "notification_id": "notif_promo_xyz789",
             // "campaign_id": "cmp_summer_sale_2025",
             // "notification_type": "push",
@@ -211,7 +211,7 @@ export class Event{
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         // enque events
         this.enqueEvents(event_properties)
     }
@@ -219,11 +219,11 @@ export class Event{
     async notificationOpened(properties = {}){
         let event_properties = {
             "event_name": "notification_opened",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             // "notification_id": "notif_promo_xyz789",
             // "campaign_id": "cmp_summer_sale_2025",
             // "action_id": null,
@@ -231,7 +231,7 @@ export class Event{
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         //enque events
         this.enqueEvents(event_properties)
     }
@@ -239,16 +239,16 @@ export class Event{
     async notificationDismissed(properties = {}){
         let event_properties = {
             "event_name": "notification_dismissed",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             // "notification_id": "notif_promo_xyz789",
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         // enque events
         this.enqueEvents(event_properties)
     }
@@ -256,34 +256,40 @@ export class Event{
     async deviceOnline(properties = {}){
         let event_properties = {
             "event_name": "device_online",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['event_properties'] = {
-            "connection_type": event_properties["network"]["connection_type"],
+        event_properties['metadata'] = {
+            "connection_type": event_properties?.network?.connection_type,
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties()}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
         // qnque events
-        this.enqueEvents(event_properties)
+        await this.enqueEvents(event_properties)
+        await window.nexora.device.set({
+            "offline" : false
+        })
     }
 
     async deviceOffline(properties = {}){
         let event_properties = {
             "event_name": "device_offline",
-            "event_properties" : {}
+            "metadata" : {}
         }
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['event_properties'] = {
+        event_properties['metadata'] = {
             ...properties
         };
         // default properties
-        event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties()}
+        event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
         // enque events
-        this.enqueEvents(event_properties)
+        await this.enqueEvents(event_properties)
+        await window.nexora.device.set({
+            "offline" : true
+        })
     }
 
     async resetInactivityTimer() {
