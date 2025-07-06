@@ -1,54 +1,72 @@
-
+import { Storage } from "../storage";
 
 export default class EventBuffer {
     constructor() {
       this.systemQueue = [];
       this.customEventsQueue = []
+      this.storage = new Storage()
     }
   
-    enqueueSystemEvents(event) {
+    async enqueueSystemEvents(event) {
       this.systemQueue.push(event);
+      let storedSystemQueue = [...await this.getSystemEvents(), event]
+      await this.storage.set("system_events", storedSystemQueue)
     }
 
-    enqueueCustomEvents(event){
+    async enqueueCustomEvents(event){
       this.customEventsQueue.push(event)
+      let storedCustomQueue = [...await this.getCustomEvents(), event]
+      await this.storage.set("custom_events", storedCustomQueue)
+    }
+
+    async getSystemEvents(){
+      let system_events = await this.storage.get("system_events")
+      if(system_events){
+        return system_events
+      }
+      return []
     }
   
-    dequeueSystemEvents() {
-      const events = [...this.systemQueue];
+    async getCustomEvents(){
+      let custom_events = await this.storage.get("custom_events")
+      if(custom_events){
+        return custom_events
+      } 
+      return []
+    }
+
+    async dequeueSystemEvents() {
+      const events = [...await this.getSystemEvents()];
       this.systemQueue = [];
+      await this.storage.set("system_events", [])
       return events;
     }
 
-    dequeueCustomEvents() {
-      const events = [...this.customEventsQueue];
+    async dequeueCustomEvents() {
+      const events = [...this.getCustomEvents()];
       this.customEventsQueue = [];
+      await this.storage.set("custom_events", [])
       return events;
     }
+  
+    async peekSystemEvent() {
+      return [... await this.getSystemEvents()];
+    }
 
-    dequeue() {
-        if (this.isEmpty()) return null;
-        return this.systemQueue.shift();
+    async peekCustomEvent() {
+      return [... await this.getCustomEvents()];
+    }
+
+    async isSystemEventsEmpty() {
+      return await this.getSystemEvents().length === 0;
+    }
+
+    async isCustomEventsEmpty(){
+      return await this.getCustomEvents().length === 0;
     }
   
-    peekSystemEvent() {
-      return [...this.systemQueue];
-    }
-
-    peekCustomEvent() {
-      return [...this.customEventsQueue];
-    }
-
-    isSystemEventsEmpty() {
-      return this.systemQueue.length === 0;
-    }
-
-    isCustomEventsEmpty(){
-      return this.customEventsQueue.length === 0;
-    }
-  
-    size() {
-      return (this.systemQueue.length + this.customEventsQueue.length);
+    async size() {
+      return (await this.getSystemEvents().length + await this.getCustomEvents().length);
     }
   }
   

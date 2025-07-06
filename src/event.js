@@ -87,7 +87,6 @@ export class Event{
                 "event_name" : event_name,
                 "event_properties" : payload
             }, 
-            Endpoints.customEvent,
             null,
             true
         )
@@ -110,13 +109,14 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties()}
         // pushing in queue
-        this.enqueEvents(event_properties, Endpoints.systemEvent, function(){
+        this.enqueEvents(event_properties, function(){
             this.sessionStarted();
             // this.user.create()            
         })
     }
 
     async screenViewed(properties = {}){
+        console.log("inside ----- screen viewed")
         if(this.user.isExists()){
             // this.sessionStarted()
             let event_properties = {
@@ -134,9 +134,7 @@ export class Event{
             // default properties
             event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
             // pushing in queue
-            this.enqueEvents(event_properties, Endpoints.systemEvent)
-            // push event
-            // this.api.request(Endpoints.systemEvent, event_properties)
+            this.enqueEvents(event_properties)
         }else{
             this.websiteLaunched()
             this.resetInactivityTimer()
@@ -157,13 +155,9 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
         // pushing in queue
-        this.enqueEvents(event_properties, Endpoints.systemEvent, function(){
+        this.enqueEvents(event_properties, function(){
             this.endSession()            
         })
-        // // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
-        // // session closed
-        // this.session.endSession()
     }
 
     async sessionStarted(properties = {}){
@@ -181,9 +175,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
         // pushing in queue
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async sessionEnded(properties = {}){
@@ -200,9 +192,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
         // enque events
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async notificationRecieved(properties = {}){ // need to look for events to capture this
@@ -223,9 +213,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
         // enque events
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async notificationOpened(properties = {}){
@@ -245,9 +233,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
         //enque events
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async notificationDismissed(properties = {}){
@@ -264,9 +250,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties(['network'])}
         // enque events
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async deviceOnline(properties = {}){
@@ -283,9 +267,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties()}
         // qnque events
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async deviceOffline(properties = {}){
@@ -301,9 +283,7 @@ export class Event{
         // default properties
         event_properties['event_properties'] = {...event_properties['event_properties'],...await this.getDefaultEventProperties()}
         // enque events
-        this.enqueEvents(event_properties, Endpoints.systemEvent)
-        // push event
-        // this.api.request(Endpoints.systemEvent, event_properties)
+        this.enqueEvents(event_properties)
     }
 
     async resetInactivityTimer() {
@@ -313,22 +293,16 @@ export class Event{
         }, 20 * 60 * 1000); // 20 minutes
     }
 
-    async enqueEvents(event_properties, endpoint, executables = null, is_custom_events = false){
+    async enqueEvents(event_properties, executables = null, is_custom_events = false){
         // pushing in queue
         event_properties["user"] = await this.user.get()
         if(is_custom_events){
             window.nexora.eventBuffer.enqueueCustomEvents(
-                {
-                    "data" : event_properties,
-                    "endpoint" : endpoint,
-                }
+                event_properties,
             )
         }else{
             window.nexora.eventBuffer.enqueueSystemEvents(
-                {
-                    "data" : event_properties,
-                    "endpoint" : endpoint,
-                }
+                event_properties,
             )
         }
         // call the callbacks
@@ -336,8 +310,5 @@ export class Event{
             executables();
         // flush batch if event size reached threshold size
         window.nexora.batchFlusher.tryImmediateFlush()
-        
-        // directl call api
-        // window.nexora.api.request(endpoint, event_properties);
     }
 }

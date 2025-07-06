@@ -5,8 +5,8 @@ export default class BatchFlusher {
       this.buffer = buffer;
       this.dispatcher = dispatcher;
       this.config = config;
-      this.flushInterval = 2000; // ms
-      this.batchSize = this.config.get("batch_size") || 10;
+      this.flushInterval = this.config.get("flushInterval") || 2000; // ms
+      this.batchSize = this.config.get("batchSize") || 10;
   
       this.timer = null;
     }
@@ -31,17 +31,23 @@ export default class BatchFlusher {
     }
   
     async flush() {
-      if (this.buffer.isSystemEventsEmpty() && this.buffer.isCustomEventsEmpty()) return;
-  
-      const systemEvents = [];
-      for (let i = 0; i < this.batchSize && !this.buffer.isSystemEventsEmpty(); i++) {
-        systemEvents.push(this.buffer.dequeueSystemEvents()); // get 1 by 1
-      }
+      if (await this.buffer.isSystemEventsEmpty() && await this.buffer.isCustomEventsEmpty()) return;
+      
+      const systemEvents = await this.buffer.dequeueSystemEvents()
+      console.log(systemEvents)
+      console.log("((((systemEvents))))")
+      // const systemEvents = [];
+      // for (let i = 0; i < this.batchSize && !await this.buffer.isSystemEventsEmpty(); i++) {
+        // systemEvents.push(await this.buffer.dequeueSystemEvents()); // get 1 by 1
+      // }
 
-      const customEvents = [];
-      for (let i = 0; i < this.batchSize && !this.buffer.isCustomEventsEmpty(); i++) {
-        customEvents.push(this.buffer.dequeueCustomEvents()); // get 1 by 1
-      }
+      const customEvents = await this.buffer.dequeueCustomEvents()
+      console.log(customEvents)
+      console.log("((((customEvents))))")
+      // const customEvents = [];
+      // for (let i = 0; i < this.batchSize && !this.buffer.isCustomEventsEmpty(); i++) {
+      //   customEvents.push(await this.buffer.dequeueCustomEvents()); // get 1 by 1
+      // }
   
       try {
         await this.dispatcher.dispatchSystemEvents(systemEvents);
@@ -49,13 +55,13 @@ export default class BatchFlusher {
       } catch (e) {
         console.error("Dispatch failed", e);
         // Requeue or persist if needed
-        systemEvents.forEach(event => this.buffer.enqueueSystemEvents(event));
-        customEvents.forEach(event => this.buffer.enqueueCustomEvents(event));
+        systemEvents.forEach(async (event) => await this.buffer.enqueueSystemEvents(event));
+        customEvents.forEach(async (event) => await this.buffer.enqueueCustomEvents(event));
       }
     }
   
     async tryImmediateFlush() {
-      if (this.buffer.size() >= this.batchSize) {
+      if (await this.buffer.size() >= this.batchSize) {
         await this.flush();
       }
     }

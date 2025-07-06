@@ -18,7 +18,6 @@ export class API{
         // console the payloads and endpoints
         payload["platform"] = "web"
         payload["client_id"] = this.clientId
-        // console.log(`http://34.18.41.215:5000/v1/${url}`)
         console.log(payload)
         return {"data":payload}
         // console.log(this.headers)

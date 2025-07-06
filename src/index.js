@@ -1,23 +1,53 @@
 import { NexoraCore } from './nexora';
 
-export default class Nexora {
+class Nexora {
     constructor(clientId, passcode, apiDomain) {
-        // If a Nexora wrapper is already present, return it
-        if (window.nexora) {
-            return window.nexora;
+        if (Nexora._instance) {
+            console.log('Returning existing NexoraCore instance');
+            return Nexora._instance;
         }
 
         console.log('Initializing Nexora SDK...');
+        const instance = new NexoraCore(clientId, passcode, apiDomain);
+        console.log(instance)
+        console.log("instance")
+        window.nexora = instance;
+        Nexora._instance = this;
+        return this;
 
-        // Create the NexoraCore instance
-        this.nexora = new NexoraCore(clientId, passcode, apiDomain);
-        //ndu
-        // Save the Nexora wrapper (this) globally ana
-        window.nexora = this.nexora; // nth i
-
-        return window.nexora
     }
+
+    static getInstance() {
+        if (!Nexora._instance) {
+            throw new Error('[Nexora] SDK not initialized');
+        }
+        return Nexora._instance;
+    }
+    
+    static getCore() {
+        if (!window.nexora) {
+            throw new Error('[Nexora] NexoraCore not initialized');
+        }
+        return window.nexora;
+    }
+
+
+    static ensureInitialized() {
+        if (!window.nexora) {
+        throw new Error('[Nexora] SDK not initialized. Please initialize first.');
+        }
+        return window.nexora;
+    }
+      
 }
 
-// Expose the Nexora class globally so other JS websites can use it
-window.Nexora = Nexora;
+// Expose the Nexora class globally
+
+// Optionally attach to window for global access (for MPA + easy debug)
+if (typeof window !== 'undefined') {
+    window.Nexora = Nexora;
+    console.log(window.nexora)
+    console.log(window.Nexora)
+}
+  
+  export default Nexora;

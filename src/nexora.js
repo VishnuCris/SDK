@@ -11,13 +11,6 @@ import { User } from "./user";
 
 export class NexoraCore{
     constructor(clientId, passcode, apiDomain){
-        console.log(clientId)
-        console.log(passcode)
-        console.log(apiDomain)
-        // setting common properties
-        this.clientId = clientId;
-        this.passcode = passcode;
-        this.apiDomain = apiDomain;
         // instance of api
         this.api = new API(clientId, passcode, apiDomain)
         // instance of user
