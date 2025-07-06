@@ -17,7 +17,7 @@ export default class EventDispatcher {
       const payload = events.slice(0, this.batchSize);
   
       try {
-        await this.api.request(Endpoints.systemEvent, payload);
+        await this.api.request(Endpoints.systemEvent, payload, true);
       } catch (e) {
         Logger.logError("Dispatch failed", e);
         throw e; // So caller can decide to retry or persist
@@ -33,7 +33,7 @@ export default class EventDispatcher {
       const payload = events.slice(0, this.batchSize);
   
       try {
-        await this.api.request(Endpoints.customEvent, payload);
+        await this.api.request(Endpoints.customEvent, payload, true);
       } catch (e) {
         Logger.logError("Dispatch failed", e);
         throw e; // So caller can decide to retry or persist
@@ -49,7 +49,7 @@ export default class EventDispatcher {
       const payload = events.slice(0, this.batchSize);
   
       try {
-        await this.api.request(Endpoints.customEvent, payload);
+        await this.api.request(Endpoints.pushProfile, payload, true);
       } catch (e) {
         Logger.logError("Dispatch failed", e);
         throw e; // So caller can decide to retry or persist

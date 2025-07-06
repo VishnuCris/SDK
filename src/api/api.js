@@ -13,7 +13,7 @@ export class API{
         }
     }
 
-    async request(url,payload={}){
+    async request(url,payload = {},  from_dispatcher = false){
         try {
             const response = await fetch(`http://34.18.41.215:5000/v1${url}`, {
               method: 'POST',
@@ -41,15 +41,19 @@ export class API{
         
           } catch (error) {
             console.log("************* inside api error ****************");
-            await Logger.logError(error);
-            await this.processErrorEvents(url, payload);
+            // only do error handler for direct push
+            if(!from_dispatcher){
+              await Logger.logError(error);
+              await this.processErrorEvents(url, payload);
+            }
             throw error;  // rethrow so caller can handle
           }
     }
 
     async processErrorEvents(endpoint, payload){
         if(endpoint == "/events/profile"){
-            await window.nexora.user.failedEvents(payload, endpoint)
+            console.log("inside ---------- processs error events ------")
+            await window.nexora.user.failedEvents(payload[0], endpoint)
         }
     }
 }

@@ -75,9 +75,9 @@ export class User{
         event_properties['user'] = {...event_properties['user'], ...user}
         event_properties["evemt_name"] = "user_login"
         userProperties['metadata'] = userProperties
-        let responseData = await this.api.request(Endpoints.userlogin, event_properties);
+        let responseData = await this.api.request(Endpoints.userlogin, [event_properties]);
         if(responseData)
-            await this.store(responseData) // in this response have to be user object may be change in the prespective of api logics
+            await this.store(responseData)
     }
 
     async logout(userProperties = {}){
@@ -99,7 +99,7 @@ export class User{
         event_properties['user']['additional_properties'] = user['additional_properties']
         event_properties["evemt_name"] = "profile_push"
         userProperties['metadata'] = userProperties
-        let responseData = await this.api.request(Endpoints.pushProfile, event_properties); //  discuss whether we have to hit api incase of profilepush
+        let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
         if(responseData)
             await this.store(responseData)
     }
@@ -121,18 +121,27 @@ export class User{
     }
 
     async failedEvents(event_properties, endpoint){
-        console.log("********* inside user failed evebts backup ***********")
         let failed = await this.getFailedEvents()
-        failed.push(
-            {
-                "endpoint" : endpoint,
-                "event_properties" : event_properties
-            }
-        )
+        console.log({
+            "endpoint" : endpoint,
+            "event_properties" : event_properties
+        })
+        console.log("*****  inide failed events *********")
+        console.log(failed)
+        failed = [...failed, {
+            "endpoint" : endpoint,
+            "event_properties" : event_properties
+        }]
         await this.storage.set("user_failed_events", failed)
     }
 
     async getFailedEvents(){
         return await this.storage.get("user_failed_events") || []
+    }
+
+    async dequeFailedEvents(){
+        const events = [...await this.getFailedEvents()];
+        await this.storage.set("user_failed_events", [])
+        return events;
     }
 }
