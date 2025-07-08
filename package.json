@@ -21,6 +21,7 @@
     "esbuild": "^0.25.4"
   },
   "dependencies": {
+    "firebase": "^11.10.0",
     "localforage": "^1.10.0",
     "ua-parser-js": "^2.0.3"
   }

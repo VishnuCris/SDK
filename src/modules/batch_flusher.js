@@ -59,7 +59,7 @@ export default class BatchFlusher {
       }catch(e){
         console.log(userFailedEvents)
         console.log("((((((((((((((userFailedEvents inside flush))))))))))))))")
-        userFailedEvents.forEach(async (event)  => await window.nexora.user.failedEvents(event?.event_properties, event?.endpoint));
+        userFailedEvents.forEach(async (event)  => await window.nexora.user.failedEvents(event));
       }
     }
   

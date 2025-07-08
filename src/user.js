@@ -40,30 +40,26 @@ export class User{
         // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
         let userObject = {
-            "nexora_id": userId,
+            // "nexora_id": userId,
+            "id": userId,
             "timestamp":this.helpers.getCurrentTimeStamp()
         }
-        await this.storage.set(
-            "user",
-            userObject
-        )
+        await this.storage.set("user",userObject)
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...userObject}
-        event_properties["evemt_name"] = "user_creation"
+        event_properties["event_name"] = "user_creation"
         userProperties['metadata'] = {...userProperties, ...userObject}
-        // let responseData = await this.api.request(Endpoints.userRegister, event_properties);
+        let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]);
         // await this.store(responseData) // in this response have to be user object may be change in the prespective of api logics
-        // create a session for the current user
         this.session.createSession()
 
     }
 
     async get(){
         let user = await this.storage.get("user")
-        console.log(user)
         if(!user){
-            await this.create()
-            return await this.storage.get("user")
+          await this.create()
+          user = await this.storage.get("user")
         }
         return user
     }
@@ -73,18 +69,18 @@ export class User{
         user = {...user,...userProperties}
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...user}
-        event_properties["evemt_name"] = "user_login"
+        event_properties["event_name"] = "user_login"
         userProperties['metadata'] = userProperties
         let responseData = await this.api.request(Endpoints.userlogin, [event_properties]);
         if(responseData)
-            await this.store(responseData)
+            await this.store(user)
     }
 
     async logout(userProperties = {}){
         await this.unStore();
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...userObject}
-        event_properties["evemt_name"] = "user_logout"
+        event_properties["event_name"] = "user_logout"
         userProperties['metadata'] = userProperties
         await this.api.request(Endpoints.userlogout); // discuss whether we have to hit api incase of logout
         // we have to look a logic for create new user on logout, by now if the application refreshed then user creation happened and website launch event called for new anonymous user or if we create a new user on logout but website launch event not called for new anonmous user in this case screen viewed event is called.
@@ -97,15 +93,14 @@ export class User{
         user['additional_properties'] = userProperties
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user']['additional_properties'] = user['additional_properties']
-        event_properties["evemt_name"] = "profile_push"
+        event_properties["event_name"] = "profile_push"
         userProperties['metadata'] = userProperties
         let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
         if(responseData)
-            await this.store(responseData)
+            await this.store(user)
     }
 
     async store(userObject){
-        console.log(userObject)
         await this.storage.set(
             "user",
             userObject
@@ -120,18 +115,9 @@ export class User{
         return await this.storage.get('user')
     }
 
-    async failedEvents(event_properties, endpoint){
+    async failedEvents(event_properties){
         let failed = await this.getFailedEvents()
-        console.log({
-            "endpoint" : endpoint,
-            "event_properties" : event_properties
-        })
-        console.log("*****  inide failed events *********")
-        console.log(failed)
-        failed = [...failed, {
-            "endpoint" : endpoint,
-            "event_properties" : event_properties
-        }]
+        failed = [...failed, event_properties]
         await this.storage.set("user_failed_events", failed)
     }
 

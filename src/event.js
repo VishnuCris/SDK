@@ -78,6 +78,9 @@ export class Event{
             }
         }
 
+        properties['client_id'] = this.clientId
+        properties['platform'] = "web"
+
         return properties;
     }
 
@@ -85,7 +88,8 @@ export class Event{
         this.enqueEvents(
             {
                 "event_name" : event_name,
-                "metadata" : payload
+                "metadata" : payload,
+                ...await this.getDefaultEventProperties()
             }, 
             null,
             true

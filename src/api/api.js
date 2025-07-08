@@ -15,11 +15,14 @@ export class API{
 
     async request(url,payload = {},  from_dispatcher = false){
         try {
+          console.log(payload)
+          console.log("(((((payload)))))")
             const response = await fetch(`http://34.18.41.215:5000/v1${url}`, {
               method: 'POST',
               headers: this.headers,
               body: JSON.stringify(payload),
-              credentials: 'include'
+              credentials: 'omit',
+              mode:'cors'
             });
         
             if (!response.ok) {
@@ -53,7 +56,7 @@ export class API{
     async processErrorEvents(endpoint, payload){
         if(endpoint == "/events/profile"){
             console.log("inside ---------- processs error events ------")
-            await window.nexora.user.failedEvents(payload[0], endpoint)
+            await window.nexora.user.failedEvents(payload[0])
         }
     }
 }

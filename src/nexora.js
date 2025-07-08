@@ -9,6 +9,7 @@ import EventDispatcher from "./modules/event_dispatcher";
 import SDKConfig from "./modules/sdk_config";
 import { User } from "./user";
 import { Device } from "./device";
+import FirebasePushSDK from "./notifications/firebase";
 
 export class NexoraCore{    
     constructor(clientId, apiKey, apiDomain){
@@ -33,6 +34,8 @@ export class NexoraCore{
         this.registerSystemEvents()
         // start batch flusher
         this.batchFlusher.start();
+        // notifications
+        this.FirebasePushSDK = FirebasePushSDK;
     }
 
     registerSystemEvents(){
