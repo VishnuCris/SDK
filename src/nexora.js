@@ -120,7 +120,7 @@ export class NexoraCore{
             case 'push-received':
               this.event.notificationRecieved(notification);
               break;
-            case 'notification_opened':
+            case 'notification-clicked':
               this.event.notificationOpened(notification);
               break;
             case 'notification_dismissed':
