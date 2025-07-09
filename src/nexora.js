@@ -47,6 +47,7 @@ export class NexoraCore{
         this.listenNotificationViewedEvent()
         this.listenNotificationDismissedEvent()
         this.handleGlobalExceptions()
+        this.listenFirebaseServiceWorkerMessages()
     }
 
     listenWebsiteLaunchedEvent(){
@@ -78,6 +79,8 @@ export class NexoraCore{
 
     listenNoticationRecievedEvent(){
         window.addEventListener('push', (event) => {
+            console.log("inside notification push")
+            console.log(event)
             if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
                 this.event.notificationRecieved()
         });
@@ -86,6 +89,8 @@ export class NexoraCore{
 
     listenNotificationViewedEvent(){
         window.addEventListener('notificationclick', (event) => {
+            console.log("inside notification click")
+            console.log(event)
             if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
                 this.event.notificationOpened()
         });
@@ -94,11 +99,37 @@ export class NexoraCore{
 
     listenNotificationDismissedEvent(){
         window.addEventListener('notificationclose', (event) => {
+            console.log("inside notification close")
+            console.log(event)
             if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
                 this.event.notificationDismissed()
         });
           
     }
+
+    listenFirebaseServiceWorkerMessages() {
+        if (!navigator.serviceWorker) return;
+      
+        navigator.serviceWorker.addEventListener('message', (event) => {
+            console.log(event)
+            console.log("(((event)))")
+          const { messageType, notification } = event.data || {};
+          console.log("[Nexora SDK] SW message received:", messageType, notification);
+      
+          switch (messageType) {
+            case 'push-received':
+              this.event.notificationRecieved(notification);
+              break;
+            case 'notification_opened':
+              this.event.notificationOpened(notification);
+              break;
+            case 'notification_dismissed':
+              this.event.notificationDismissed(notification);
+              break;
+          }
+        });
+      }
+      
 
     handleGlobalExceptions(){
         window.addEventListener("error", (event) => {

@@ -110,6 +110,11 @@ export class Event{
             "source_campaign": null,
             ...properties
         };
+        //firebase token 
+        if(window.nexora){
+            console.log(window.nexora.device)
+            event_properties['firebase_token']  =  await window.nexora.device.get("firebase_token")
+        }
         // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
         // pushing in queue
@@ -135,6 +140,11 @@ export class Event{
                 viewDurationSeconds: 0, // we have to take by listening other events (beforeload)    
                 ...properties
             };
+            //firebase token 
+            if(window.nexora){
+                console.log(window.nexora.device)
+                event_properties['firebase_token']  =  await window.nexora.device.get("firebase_token")
+            }
             // default properties
             event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
             // pushing in queue
