@@ -40,7 +40,7 @@ export class User{
     async create(userProperties = {}){
         // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
-        let userObject = {
+        let userObject = {  
             // "nexora_id": userId,
             "id": userId,
             "timestamp":this.helpers.getCurrentTimeStamp(),
