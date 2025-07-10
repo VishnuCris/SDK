@@ -6,13 +6,14 @@ import { Helpers } from './utilities/helper';
 import { Session } from './session';
 import { Event } from './event';
 import { Logger } from './logger';
+import { EventName } from './api/eventname.js';
 export class User{
-    constructor(clientId = null, apiKey = null, api = window.nexora?.api){
+    constructor(clientId = null, apiKey = null, api = window.nexora?.api, storage=null){
         this.clientId = clientId;
         this.apiKey = apiKey;
         // this.api = new API(clientId, apiKey)
         this.api = api;
-        this.storage = new Storage();
+        this.storage = storage;
         this.helpers = new Helpers();
         this.session = new Session(clientId, apiKey);
         // this.event = new Event(clientId, apiKey)
@@ -42,12 +43,13 @@ export class User{
         let userObject = {
             // "nexora_id": userId,
             "id": userId,
-            "timestamp":this.helpers.getCurrentTimeStamp()
+            "timestamp":this.helpers.getCurrentTimeStamp(),
+            "user_id" : ""
         }
         await this.storage.set("user",userObject)
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...userObject}
-        event_properties["event_name"] = "user_creation"
+        event_properties["event_name"] = EventName.profileCreate
         userProperties['metadata'] = {...userProperties, ...userObject}
         let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]);
         // await this.store(responseData) // in this response have to be user object may be change in the prespective of api logics
@@ -69,7 +71,7 @@ export class User{
         user = {...user,...userProperties}
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...user}
-        event_properties["event_name"] = "user_login"
+        event_properties["event_name"] = EventName.profileUpdate
         userProperties['metadata'] = userProperties
         let responseData = await this.api.request(Endpoints.userlogin, [event_properties]);
         if(responseData)
@@ -93,11 +95,32 @@ export class User{
         user['additional_properties'] = userProperties
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user']['additional_properties'] = user['additional_properties']
-        event_properties["event_name"] = "profile_push"
+        event_properties["event_name"] = EventName.profileUpdate
         userProperties['metadata'] = userProperties
         let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
         if(responseData)
             await this.store(user)
+    }
+
+    async tokenPush(token){
+        // check the token exists in storage if block the event
+        const device_details  =  await window.nexora.device.get()
+        let user = await this.storage.get("user")
+        if((device_details && device_details?.firebase_token) || !user){
+            return;
+        }
+        let event_properties = await nexora.event.getDefaultEventProperties()
+        event_properties["event_name"] = EventName.profileUpdate
+        if(event_properties['device']){
+            event_properties['device']['firebase_token'] = token
+        }
+        event_properties['user'] = user
+        // set this token in device object
+        await window.nexora.device.set({
+            "firebase_token" : token
+        })
+        // raise push token
+        await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
     }
 
     async store(userObject){

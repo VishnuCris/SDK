@@ -15,6 +15,9 @@ export default class FirebasePushSDK {
   }
 
   _initFirebase() {
+    // set the credential in indexdb storage 
+    if(window.nexora)
+      window.nexora.storage.set("firebase_config", this.firebaseConfig)
     this.app = initializeApp(this.firebaseConfig);
     this.messaging = getMessaging(this.app);
     this._registerServiceWorkerAndGenerateToken();
@@ -38,12 +41,8 @@ export default class FirebasePushSDK {
 
       if (token) {
         console.log("FCM Token:", token);
-        // set this token in device object
-        await window.nexora.device.set({
-          "firebase_token" : token
-        })
         // trigger a event
-        
+        window.nexora.user.tokenPush(token)
         // Optionally register token to your backend
         if (this.backendRegisterURL) {
           await fetch(this.backendRegisterURL, {

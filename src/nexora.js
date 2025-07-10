@@ -10,13 +10,16 @@ import SDKConfig from "./modules/sdk_config";
 import { User } from "./user";
 import { Device } from "./device";
 import FirebasePushSDK from "./notifications/firebase";
+import { Storage } from "./storage";
 
 export class NexoraCore{    
     constructor(clientId, apiKey, apiDomain){
         // instance of api
         this.api = new API(clientId, apiKey, apiDomain)
+        // instance of storage
+        this.storage = new Storage();
         // instance of user
-        this.user = new User(this.clientId, this.apiKey, this.api);
+        this.user = new User(this.clientId, this.apiKey, this.api, this.storage);
         // instance of event
         this.event = new Event(clientId, apiKey, this.user)
         // instance of device
@@ -111,8 +114,6 @@ export class NexoraCore{
         if (!navigator.serviceWorker) return;
       
         navigator.serviceWorker.addEventListener('message', (event) => {
-            console.log(event)
-            console.log("(((event)))")
           const { messageType, notification } = event.data || {};
           console.log("[Nexora SDK] SW message received:", messageType, notification);
       

@@ -45,17 +45,25 @@ export class Event{
         properties['session_start_time'] = this.session.getSession()['timestamp']
         // device infos
         let uaResult = this.uaParser.getResult();
-        if(!ignorable_properties.includes('device')){
-            properties['device'] = {
-                "os_name" : uaResult.os.name || 'unknown',
-                "os_version" : uaResult.os.version || 'unknown',
-                "device" : uaResult.device.model || 'unknown',
-                "device_type" : uaResult.device.type || 'desktop',
-                "browser": uaResult.browser.name || 'unknown',
-                "browser_version": uaResult.browser.version || 'unknown',
-                "userAgent": navigator.userAgent || 'unknown',
+        let firebase_token = ""
+        if(window?.nexora && window?.nexora?.device){
+            let device_details = await window?.nexora?.device.get()
+            if(device_details?.firebase_token){
+                firebase_token = device_details?.firebase_token
             }
         }
+        // if(!ignorable_properties.includes('device')){
+        properties['device'] = {
+            "os_name" : uaResult.os.name || 'unknown',
+            "os_version" : uaResult.os.version || 'unknown',
+            "device" : uaResult.device.model || 'unknown',
+            "device_type" : uaResult.device.type || 'desktop',
+            "browser": uaResult.browser.name || 'unknown',
+            "browser_version": uaResult.browser.version || 'unknown',
+            "userAgent": navigator.userAgent || 'unknown',
+            "firebase_token" : firebase_token
+        }
+    //    }
         if(!ignorable_properties.includes('app')){
             properties['app'] = {
                 "name": navigator.appName || 'unknown',
@@ -110,11 +118,6 @@ export class Event{
             "source_campaign": null,
             ...properties
         };
-        //firebase token 
-        if(window.nexora){
-            console.log(window.nexora.device)
-            event_properties['firebase_token']  =  await window.nexora.device.get("firebase_token")
-        }
         // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
         // pushing in queue
@@ -140,11 +143,6 @@ export class Event{
                 viewDurationSeconds: 0, // we have to take by listening other events (beforeload)    
                 ...properties
             };
-            //firebase token 
-            if(window.nexora){
-                console.log(window.nexora.device)
-                event_properties['firebase_token']  =  await window.nexora.device.get("firebase_token")
-            }
             // default properties
             event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
             // pushing in queue
@@ -217,11 +215,6 @@ export class Event{
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['metadata'] = {
-            // "notification_id": "notif_promo_xyz789",
-            // "campaign_id": "cmp_summer_sale_2025",
-            // "notification_type": "push",
-            // "title": "Big Summer Sale!",
-            // "body": "Shop now and get 50% off on all electronics!",
             ...properties
         };
         // default properties
@@ -238,10 +231,6 @@ export class Event{
         // add additional event properties
         let sessionOccurence = this.session.getSessionOccurence()
         event_properties['metadata'] = {
-            // "notification_id": "notif_promo_xyz789",
-            // "campaign_id": "cmp_summer_sale_2025",
-            // "action_id": null,
-            // "deep_link_url": "your_app://products?category=electronics",
             ...properties
         };
         // default properties

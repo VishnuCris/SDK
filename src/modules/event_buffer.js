@@ -1,4 +1,5 @@
 import { Storage } from "../storage";
+import { EventName } from "../api/eventname";
 
 export default class EventBuffer {
     constructor() {
@@ -10,17 +11,17 @@ export default class EventBuffer {
     async enqueueSystemEvents(event) {
       this.systemQueue.push(event);
       let storedSystemQueue = [...await this.getSystemEvents(), event]
-      await this.storage.set("system_events", storedSystemQueue)
+      await this.storage.set(EventName.systemEvent, storedSystemQueue)
     }
 
     async enqueueCustomEvents(event){
       this.customEventsQueue.push(event)
       let storedCustomQueue = [...await this.getCustomEvents(), event]
-      await this.storage.set("custom_events", storedCustomQueue)
+      await this.storage.set(EventName.customEvent, storedCustomQueue)
     }
 
     async getSystemEvents(){
-      let system_events = await this.storage.get("system_events")
+      let system_events = await this.storage.get(EventName.systemEvent)
       console.log(system_events)
       console.log("((((system_events))))")
       if(system_events){
@@ -30,7 +31,7 @@ export default class EventBuffer {
     }
   
     async getCustomEvents(){
-      let custom_events = await this.storage.get("custom_events")
+      let custom_events = await this.storage.get(EventName.customEvent)
       console.log(custom_events)
       console.log("((((custom_events))))")
       if(custom_events){
@@ -42,14 +43,14 @@ export default class EventBuffer {
     async dequeueSystemEvents() {
       const events = [...await this.getSystemEvents()];
       this.systemQueue = [];
-      await this.storage.set("system_events", [])
+      await this.storage.set(EventName.systemEvent, [])
       return events;
     }
 
     async dequeueCustomEvents() {
       const events = [...await this.getCustomEvents()];
       this.customEventsQueue = [];
-      await this.storage.set("custom_events", [])
+      await this.storage.set(EventName.customEvent, [])
       return events;
     }
   
