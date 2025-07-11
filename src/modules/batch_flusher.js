@@ -33,8 +33,6 @@ export default class BatchFlusher {
     async flush() {
       // add offline logic here
       let device = await window.nexora.device.get()
-      console.log(device)
-      console.log("((((isOnline))))")
       if ((await this.buffer.isSystemEventsEmpty() && await this.buffer.isCustomEventsEmpty() && await window.nexora.user.getFailedEvents()) || device?.offline){
         return;
       }
@@ -57,8 +55,6 @@ export default class BatchFlusher {
         // user failed events
         await this.dispatcher.dispatchFailedUserEvents(userFailedEvents);
       }catch(e){
-        console.log(userFailedEvents)
-        console.log("((((((((((((((userFailedEvents inside flush))))))))))))))")
         userFailedEvents.forEach(async (event)  => await window.nexora.user.failedEvents(event));
       }
     }

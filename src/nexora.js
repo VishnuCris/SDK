@@ -46,13 +46,13 @@ export class NexoraCore{
         this.listenWebsiteClosedhEvent()
         this.listenDeviceOnlineEvent()
         this.listenDeviceOfflineEvent()
-        this.listenNoticationRecievedEvent()
-        this.listenNotificationViewedEvent()
-        this.listenNotificationDismissedEvent()
-        this.handleGlobalExceptions()
         this.listenFirebaseServiceWorkerMessages()
+        this.handleGlobalExceptions()
+        // this.listenNoticationRecievedEvent()
+        // this.listenNotificationViewedEvent()
+        // this.listenNotificationDismissedEvent()
     }
-
+    
     listenWebsiteLaunchedEvent(){
         window.addEventListener('load', () => {
             this.event.screenViewed()
@@ -81,9 +81,7 @@ export class NexoraCore{
     }
 
     listenNoticationRecievedEvent(){
-        window.addEventListener('push', (event) => {
-            console.log("inside notification push")
-            console.log(event)
+        wintdow.addEventListener('push', (event) => {
             if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
                 this.event.notificationRecieved()
         });
@@ -92,8 +90,6 @@ export class NexoraCore{
 
     listenNotificationViewedEvent(){
         window.addEventListener('notificationclick', (event) => {
-            console.log("inside notification click")
-            console.log(event)
             if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
                 this.event.notificationOpened()
         });
@@ -102,8 +98,6 @@ export class NexoraCore{
 
     listenNotificationDismissedEvent(){
         window.addEventListener('notificationclose', (event) => {
-            console.log("inside notification close")
-            console.log(event)
             if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
                 this.event.notificationDismissed()
         });

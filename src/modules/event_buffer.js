@@ -22,8 +22,6 @@ export default class EventBuffer {
 
     async getSystemEvents(){
       let system_events = await this.storage.get(EventName.systemEvent)
-      console.log(system_events)
-      console.log("((((system_events))))")
       if(system_events){
         return system_events
       }
@@ -32,8 +30,6 @@ export default class EventBuffer {
   
     async getCustomEvents(){
       let custom_events = await this.storage.get(EventName.customEvent)
-      console.log(custom_events)
-      console.log("((((custom_events))))")
       if(custom_events){
         return custom_events
       } 

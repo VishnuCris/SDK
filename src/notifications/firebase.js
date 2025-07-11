@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { getMessaging, getToken, onMessage, deleteToken } from 'firebase/messaging';
 
 export default class FirebasePushSDK {
   constructor(config) {
@@ -15,9 +15,6 @@ export default class FirebasePushSDK {
   }
 
   _initFirebase() {
-    // set the credential in indexdb storage 
-    if(window.nexora)
-      window.nexora.storage.set("firebase_config", this.firebaseConfig)
     this.app = initializeApp(this.firebaseConfig);
     this.messaging = getMessaging(this.app);
     this._registerServiceWorkerAndGenerateToken();
@@ -27,76 +24,73 @@ export default class FirebasePushSDK {
   async _registerServiceWorkerAndGenerateToken() {
     try {
       const permission = await Notification.requestPermission();
-      console.log(permission)
-      console.log("((((permission))))")
       if (permission !== 'granted') {
         console.warn('Notification permission not granted.');
         return;
       }
-
+  
+      // ✅ Explicitly register your service worker
+      const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+  
+      // ✅ Now get token using the SW
       const token = await getToken(this.messaging, {
         vapidKey: this.vapidKey,
-        // serviceWorkerRegistration: swRegistration
+        serviceWorkerRegistration: swRegistration
       });
-
+  
       if (token) {
         console.log("FCM Token:", token);
-        // trigger a event
-        window.nexora.user.tokenPush(token)
-        // Optionally register token to your backend
-        if (this.backendRegisterURL) {
-          await fetch(this.backendRegisterURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token })
-          });
+  
+        const device_details = await window.nexora.device.get();
+        if (!device_details?.firebase_token) {
+          window.nexora.user.tokenPush(token);
+  
+          if (this.backendRegisterURL) {
+            await fetch(this.backendRegisterURL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
+          }
         }
       } else {
         console.warn("Failed to get FCM token.");
       }
-
+  
     } catch (error) {
       console.error("Error setting up FCM:", error);
     }
-  }  
+  }
+    
 
   _setupForegroundListener() {
-      onMessage(this.messaging, (payload) => {
-          console.log("Foreground message received:", payload);
-          // You can also emit an event or callback here
-          if (Notification.permission === "granted") {
-            const { title, body, image, icon } = payload.notification || {};
-
-            new Notification(title || "New Message", {
-                body: body || "",
-                icon: icon || image || "/default-icon.png"
-            });
-          }
-      });
+    if (!this.messaging) {
+      console.warn("Messaging not initialized");
+      return;
+    }
+  
+    onMessage(this.messaging, (payload) => {
+      console.log("Foreground message received:", payload);
+  
+      const { title, body, image, icon } = payload.notification || {};
+  
+      if (Notification.permission === "granted") {
+        new Notification(title || "New Message", {
+          body: body || "",
+          icon: icon || image || "/default-icon.png"
+        });
+      } else {
+        console.warn("Notification permission not granted in foreground");
+      }
+    });
   }
 
-    saveFirebaseConfigToIndexedDB = (config) => {
-      return new Promise((resolve, reject) => {
-        const request = indexedDB.open('FirebaseSDK', 1);
-    
-        request.onupgradeneeded = () => {
-          const db = request.result;
-          if (!db.objectStoreNames.contains('config')) {
-            db.createObjectStore('config');
-          }
-        };
-    
-        request.onsuccess = () => {
-          const db = request.result;
-          const tx = db.transaction('config', 'readwrite');
-          const store = tx.objectStore('config');
-          store.put(config, 'firebaseConfig');
-          tx.oncomplete = resolve;
-          tx.onerror = reject;
-        };
-    
-        request.onerror = reject;
+    deleteFcmToken(){
+      deleteToken(this.messaging).then(() => {
+        console.log('FCM token deleted successfully');
+      }).catch((err) => {
+        console.error('Unable to delete FCM token:', err);
       });
-    };
+    }
     
 }

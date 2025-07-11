@@ -61,7 +61,9 @@ export class Event{
             "browser": uaResult.browser.name || 'unknown',
             "browser_version": uaResult.browser.version || 'unknown',
             "userAgent": navigator.userAgent || 'unknown',
-            "firebase_token" : firebase_token
+            "firebase_token" : firebase_token,
+            "platform" : "web",
+            "app_platform" : uaResult.device.type || 'desktop',
         }
     //    }
         if(!ignorable_properties.includes('app')){
@@ -128,7 +130,6 @@ export class Event{
     }
 
     async screenViewed(properties = {}){
-        console.log("inside ----- screen viewed")
         if(this.user.isExists()){
             // this.sessionStarted()
             let event_properties = {

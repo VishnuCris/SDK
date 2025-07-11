@@ -41,8 +41,8 @@ export class User{
         // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
         let userObject = {  
-            // "nexora_id": userId,
-            "id": userId,
+            // "id": userId,
+            "nexora_id": userId,
             "timestamp":this.helpers.getCurrentTimeStamp(),
             "user_id" : ""
         }
@@ -104,10 +104,9 @@ export class User{
 
     async tokenPush(token){
         // check the token exists in storage if block the event
-        const device_details  =  await window.nexora.device.get()
         let user = await this.storage.get("user")
-        if((device_details && device_details?.firebase_token) || !user){
-            return;
+        if(!user){
+            return await this.tokenPush();
         }
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties["event_name"] = EventName.profileUpdate
