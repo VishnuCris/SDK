@@ -51,8 +51,7 @@ export class User{
         event_properties['user'] = {...event_properties['user'], ...userObject}
         event_properties["event_name"] = EventName.profileCreate
         userProperties['metadata'] = {...userProperties, ...userObject}
-        let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]);
-        // await this.store(responseData) // in this response have to be user object may be change in the prespective of api logics
+        await this.api.request(Endpoints.pushProfile, [event_properties]);
         this.session.createSession()
 
     }
@@ -73,9 +72,8 @@ export class User{
         event_properties['user'] = {...event_properties['user'], ...user}
         event_properties["event_name"] = EventName.profileUpdate
         userProperties['metadata'] = userProperties
-        let responseData = await this.api.request(Endpoints.userlogin, [event_properties]);
-        if(responseData)
-            await this.store(user)
+        await this.api.request(Endpoints.userlogin, [event_properties]);
+        await this.store(user)
     }
 
     async logout(userProperties = {}){
@@ -97,16 +95,19 @@ export class User{
         event_properties['user']['additional_properties'] = user['additional_properties']
         event_properties["event_name"] = EventName.profileUpdate
         userProperties['metadata'] = userProperties
-        let responseData = await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
-        if(responseData)
-            await this.store(user)
+        await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
+        await this.store(user)
     }
 
-    async tokenPush(token){
+    async tokenPush(token, retries = 0){
         // check the token exists in storage if block the event
         let user = await this.storage.get("user")
         if(!user){
-            return await this.tokenPush();
+            retries += 1
+            if(retries > 3){
+                await this.create()
+            }
+            return await this.tokenPush(token, retries);
         }
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties["event_name"] = EventName.profileUpdate

@@ -3,14 +3,10 @@ import { NexoraCore } from './nexora';
 class Nexora {
     constructor(clientId, apiKey, apiDomain) {
         if (Nexora._instance) {
-            console.log('Returning existing NexoraCore instance');
             return Nexora._instance;
         }
 
-        console.log('Initializing Nexora SDK...');
         const instance = new NexoraCore(clientId, apiKey, apiDomain);
-        console.log(instance)
-        console.log("instance")
         window.nexora = instance;
         Nexora._instance = this;
         return this;
@@ -46,8 +42,6 @@ class Nexora {
 // Optionally attach to window for global access (for MPA + easy debug)
 if (typeof window !== 'undefined') {
     window.Nexora = Nexora;
-    console.log(window.nexora)
-    console.log(window.Nexora)
 }
   
   export default Nexora;

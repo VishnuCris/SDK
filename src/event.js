@@ -60,7 +60,7 @@ export class Event{
             "device_type" : uaResult.device.type || 'desktop',
             "browser": uaResult.browser.name || 'unknown',
             "browser_version": uaResult.browser.version || 'unknown',
-            "userAgent": navigator.userAgent || 'unknown',
+            "user_agent": navigator.userAgent || 'unknown',
             "firebase_token" : firebase_token,
             "platform" : "web",
             "app_platform" : uaResult.device.type || 'desktop',
