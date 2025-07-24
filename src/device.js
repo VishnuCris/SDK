@@ -20,4 +20,9 @@ export class Device{
         await this.storage.set("device", this.properties)
     }
 
+    async get_device_id(){
+        let deviceId = crypto.randomUUID();
+        await this.set({"device_id":deviceId})
+        return deviceId
+    }
 }

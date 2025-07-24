@@ -30,25 +30,16 @@ export class Storage{
       }
 
     async set(key, value) {
-        // localStorage.setItem(key, JSON.stringify(value));
         await this.localForage.setItem(key, value);
     }
     async get(key) {
-        // const val = localStorage.getItem(key);
-        // try {
-        //     return JSON.parse(val);
-        // } catch {
-        //     return null;
-        // }
         const val = await this.localForage.getItem(key);
         return val;
     }
     async remove(key) {
-      // localStorage.removeItem(key);
       await this.localForage.removeItem(key);
     }
     async clear(key) {
-      // localStorage.removeItem(key);
       await this.localForage.clear();
     }
 }

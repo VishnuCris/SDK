@@ -15,7 +15,10 @@ export class API{
 
     async request(url,payload = {},  from_dispatcher = false){
         try {
-            const response = await fetch(`http://34.18.41.215:5000/v1${url}`, {
+          console.log(`http://34.18.41.215:5000/v1${url}`)
+          console.log(payload)
+          console.log("((((((((((payload))))))))))")
+          const response = await fetch(`http://34.18.41.215:5000/v1${url}`, {
               method: 'POST',
               headers: this.headers,
               body: JSON.stringify(payload),

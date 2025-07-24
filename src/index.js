@@ -8,8 +8,13 @@ class Nexora {
 
         const instance = new NexoraCore(clientId, apiKey, apiDomain);
         window.nexora = instance;
-        Nexora._instance = this;
-        return this;
+        Nexora._instance = instance;
+        // call on ready function
+        instance.onDOMReady(() => {
+            console.log('[SDK] DOM ready — running screenViewed');
+            this.event?.screenViewed?.();
+        });
+        return instance;
 
     }
 
@@ -37,9 +42,6 @@ class Nexora {
       
 }
 
-// Expose the Nexora class globally
-
-// Optionally attach to window for global access (for MPA + easy debug)
 if (typeof window !== 'undefined') {
     window.Nexora = Nexora;
 }

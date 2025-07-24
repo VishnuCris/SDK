@@ -11,12 +11,10 @@ export class User{
     constructor(clientId = null, apiKey = null, api = window.nexora?.api, storage=null){
         this.clientId = clientId;
         this.apiKey = apiKey;
-        // this.api = new API(clientId, apiKey)
         this.api = api;
         this.storage = storage;
         this.helpers = new Helpers();
         this.session = new Session(clientId, apiKey);
-        // this.event = new Event(clientId, apiKey)
     }
 
     autoWrapMethods() {
@@ -31,14 +29,13 @@ export class User{
               return await originalMethod.apply(this, args);
             } catch (err) {
               Logger.logError(err, methodName);
-              throw err; // Optional: rethrow if needed
+              throw err;
             }
           };
         }
       }
 
     async create(userProperties = {}){
-        // this.api.request(Endpoints.createUser, payload);
         let userId = await this.helpers.createUserID()
         let userObject = {  
             // "id": userId,
@@ -46,11 +43,13 @@ export class User{
             "timestamp":this.helpers.getCurrentTimeStamp(),
             "user_id" : ""
         }
-        await this.storage.set("user",userObject)
+     
         let event_properties = await nexora.event.getDefaultEventProperties()
         event_properties['user'] = {...event_properties['user'], ...userObject}
         event_properties["event_name"] = EventName.profileCreate
         userProperties['metadata'] = {...userProperties, ...userObject}
+        console.log(userProperties)
+        await this.storage.set("user",userObject)
         await this.api.request(Endpoints.pushProfile, [event_properties]);
         this.session.createSession()
 
@@ -115,12 +114,10 @@ export class User{
             event_properties['device']['firebase_token'] = token
         }
         event_properties['user'] = user
-        // set this token in device object
         await window.nexora.device.set({
             "firebase_token" : token
         })
-        // raise push token
-        await this.api.request(Endpoints.pushProfile, [event_properties]); //  discuss whether we have to hit api incase of profilepush
+        await this.api.request(Endpoints.pushProfile, [event_properties]);
     }
 
     async store(userObject){

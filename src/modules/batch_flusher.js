@@ -64,5 +64,9 @@ export default class BatchFlusher {
         await this.flush();
       }
     }
+
+    async immediateFlush(){
+      await this.flush();
+    }
   }
   

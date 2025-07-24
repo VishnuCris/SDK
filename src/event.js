@@ -14,8 +14,8 @@ export class Event{
         this.clientId = clientId;
         this.apiKey = apiKey;
         this.user = user;
-        this.helpers = new Helpers()
-        this.session = new Session(clientId, apiKey)
+        this.helpers = new Helpers();
+        this.session = new Session(clientId, apiKey);
         this.uaParser = new UAParser();
         this.inactivityTimeout = undefined;
     }
@@ -32,7 +32,7 @@ export class Event{
               return await originalMethod.apply(this, args);
             } catch (err) {
               Logger.logError(err, methodName);
-              throw err; // Optional: rethrow if needed
+              throw err; 
             }
           };
         }
@@ -43,7 +43,6 @@ export class Event{
         properties['timestamp'] = this.helpers.getCurrentTimeStamp()
         properties['session_id'] = this.session.getSession()['session_id']
         properties['session_start_time'] = this.session.getSession()['timestamp']
-        // device infos
         let uaResult = this.uaParser.getResult();
         let firebase_token = ""
         if(window?.nexora && window?.nexora?.device){
@@ -52,45 +51,68 @@ export class Event{
                 firebase_token = device_details?.firebase_token
             }
         }
-        // if(!ignorable_properties.includes('device')){
+        // get device_id from storage
+        let device_details = await window.nexora.device.get()
+        let device_id = await device_details?.device_id
+        if(!device_id){
+            device_id = await window.nexora.device.get_device_id()
+        }
         properties['device'] = {
-            "os_name" : uaResult.os.name || 'unknown',
-            "os_version" : uaResult.os.version || 'unknown',
-            "device" : uaResult.device.model || 'unknown',
-            "device_type" : uaResult.device.type || 'desktop',
-            "browser": uaResult.browser.name || 'unknown',
-            "browser_version": uaResult.browser.version || 'unknown',
-            "user_agent": navigator.userAgent || 'unknown',
-            "firebase_token" : firebase_token,
-            "platform" : "web",
-            "app_platform" : uaResult.device.type || 'desktop',
+            os_name: uaResult.os.name || '',
+            os_version: uaResult.os.version || '',
+            device: uaResult.device.model || '',
+            device_type: uaResult.device.type || 'desktop',
+            browser: uaResult.browser.name || '',
+            browser_version: uaResult.browser.version || '',
+            user_agent: navigator.userAgent || '',
+            firebase_token: firebase_token, // make sure it's defined above
+            platform: 'web',
+            app_platform: uaResult.device.type || 'desktop',
+            device_model: uaResult.device.model || '',
+            device_brand: uaResult.device.vendor || '',        // ✅ Corrected
+            device_manufacturer: uaResult.device.vendor || '', // ✅ Corrected
+            device_id: device_id, // should be generated & stored persistently
+            carrier: '' // ✅ Fixed typo: was "career"
         }
     //    }
         if(!ignorable_properties.includes('app')){
             properties['app'] = {
-                "name": navigator.appName || 'unknown',
-                "version": navigator.appVersion || 'unknown',
-                // "build_number": "1234",
-                "sdk_version": pkg.version || 'unknown'
+                "name": navigator.appName || '',
+                "version": navigator.appVersion || '',
+                "sdk_version": pkg.version || '',
+                "build_number":process.env.BUILD_NUMBER || 'dev'
             }
         }
         if(!ignorable_properties.includes('network')){
             properties['network'] = {
-                "connection_type" : navigator?.connection?.effectiveType || 'unknown'
+                "connection_type" : navigator?.connection?.effectiveType || ''
             }
         }
-        if(!ignorable_properties.includes('network')){
+        if(!ignorable_properties.includes('context')){
             properties['context'] = {
-                "locale" : navigator.language || 'en-US',
-                "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-                "referrer" :  document.referrer || null,
-                "utm_source": new URLSearchParams(window.location.search).get('utm_source')
+                // "locale" : navigator.language || 'en-US',
+                // "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+                "locale" : 'en-US',
+                "timezone": 'GMT',
+                // "referrer" :  document.referrer || "",
+                // "utm_source": new URLSearchParams(window.location.search).get('utm_source')
             }
         }
 
         properties['client_id'] = this.clientId
         properties['platform'] = "web"
 
+        // mark event count in device
+        let event_count = device_details?.event_count ? device_details.event_count + 1 : 1
+        await window.nexora.device.set({
+            "event_count" : event_count
+        })
+        // event screen viewed count
+        let screen_viewed_count = device_details?.screen_viewed_count
+        screen_viewed_count = screen_viewed_count ? screen_viewed_count + 1 : 1
+        await window.nexora.device.set({
+            "screen_viewed_count" : screen_viewed_count
+        })
         return properties;
     }
 
@@ -98,7 +120,7 @@ export class Event{
         this.enqueEvents(
             {
                 "event_name" : event_name,
-                "metadata" : payload,
+                "event_properties" : payload,
                 ...await this.getDefaultEventProperties()
             }, 
             null,
@@ -107,134 +129,102 @@ export class Event{
     }
 
     async websiteLaunched(properties = {}){
+        let self = this
         let event_properties = {
-            "event_name": "website_launched",
-            "metadata" : {}
+            "event_name": "app_opened",
+            "event_properties" : {}
         }
-        // add additional event properties
-        event_properties['metadata'] = {
-            "initial_launch": true, // logic for taking this
-            "from_background": false, // we can omit this after discussion
-            "deep_link_url": null, // we can omit this after discussion
-            "push_notification_id": null, // we can omit this after discussion
-            "source_campaign": null,
+        event_properties['event_properties'] = {
+            "initial_launch": true, 
+            "from_background": false,
+            "deep_link_url": "",
+            "push_notification_id": "",
+            "source_campaign": "",
             ...properties
         };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
-        // pushing in queue
-        this.enqueEvents(event_properties, function(){
-            this.sessionStarted();
-            // this.user.create()            
+        this.enqueEvents(event_properties, async function(){
+            await self.sessionStarted();
         })
     }
 
     async screenViewed(properties = {}){
-        if(this.user.isExists()){
-            // this.sessionStarted()
-            let event_properties = {
-                "event_name": "screen_viewed",
-                "metadata" : {}
-            }
-            // add additional event properties
-            event_properties['metadata'] = {
-                "screen_name": document.title,                    // You can also use custom mapping
-                "url": window.location.href,
-                "referrer": document.referrer || null,           // Previous page URL
-                viewDurationSeconds: 0, // we have to take by listening other events (beforeload)    
-                ...properties
-            };
-            // default properties
-            event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
-            // pushing in queue
-            this.enqueEvents(event_properties)
-        }else{
-            this.websiteLaunched()
-            this.resetInactivityTimer()
+        console.log(await this.user.isExists())
+        if(!(await this.user.isExists())){
+            console.log("((((((((((((((((((((((((((((((((")
+            await this.websiteLaunched()
+            await this.resetInactivityTimer()
         }
     }
 
     async websiteClosed(properties = {}){
         let event_properties = {
             "event_name": "website_closed",
-            "metadata" : {}
+            "event_properties" : {}
         }
-        // add additional event properties
-        event_properties['metadata'] = {
+        event_properties['event_properties'] = {
             "session_duration_ms": this.session.getSessionDuration(),
             "reason": "user_terminated",
             ...properties
         };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
-        // pushing in queue
-        this.enqueEvents(event_properties, function(){
-            this.endSession()            
-        })
+        await this.enqueEvents(event_properties)
+        await this.sessionEnded()            
+        await window.nexora.batchFlusher.immediateFlush()
     }
 
     async sessionStarted(properties = {}){
         let event_properties = {
             "event_name": "session_started",
-            "metadata" : {}
+            "event_properties" : {}
         }
-        // add additional event properties
-        event_properties['metadata'] = {
-            "duration_ms": event_properties['user']?.is_logged_in ? false : true,
-            "session_number": this.session.getSessionOccurence(),
-            "screens_viewed_count": "1", //need to think a logic for this
+        let session_number = this.session.getSessionOccurence()
+        event_properties['event_properties'] = {
+            "new_user": window.nexora.user.isExists() ? false : true,
+            "session_number": session_number,
+            "is_first_session_today" : session_number == 1,
             ...properties
         };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
-        // pushing in queue
         this.enqueEvents(event_properties)
     }
 
     async sessionEnded(properties = {}){
         let event_properties = {
             "event_name": "session_ended",
-            "metadata" : {}
+            "event_properties" : {}
         }
-        // add additional event properties
-        event_properties['metadata'] = {
-            "session_duration_ms": this.session.getSessionDuration(),
-            "reason": "user_terminated",
+        let device_details = await window.nexora.device.get()
+        event_properties['event_properties'] = {
+            "duration_ms": this.session.getSessionDuration(),
+            "event_count":  device_details ? device_details?.event_count : 1, //need a logic,
+            "screen_viewed_count" : device_details ? device_details?.screen_viewed_count : 1,
             ...properties
         };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
-        // enque events
         this.enqueEvents(event_properties)
+
+        // clear all session related values
+        await window.nexora.device.set({
+            "screen_viewed_count" : 0,
+            "event_count" : 0,
+        })
     }
 
-    async notificationRecieved(properties = {}){ // need to look for events to capture this
+    async notificationRecieved(properties = {}){
         let event_properties = {
             "event_name": "notification_recieved",
-            "metadata" : {}
+            "event_properties" : properties
         }
-        // add additional event properties
-        let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['metadata'] = {
-            ...properties
-        };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
-        // enque events
         this.enqueEvents(event_properties)
     }
 
     async notificationOpened(properties = {}){
         let event_properties = {
             "event_name": "notification_opened",
-            "metadata" : {}
+            "event_properties" : properties
         }
-        // add additional event properties
-        let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['metadata'] = {
-            ...properties
-        };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
         //enque events
         this.enqueEvents(event_properties)
@@ -243,34 +233,21 @@ export class Event{
     async notificationDismissed(properties = {}){
         let event_properties = {
             "event_name": "notification_dismissed",
-            "metadata" : {}
+            "event_properties" : properties
         }
-        // add additional event properties
-        let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['metadata'] = {
-            // "notification_id": "notif_promo_xyz789",
-            ...properties
-        };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties(['network'])}
-        // enque events
         this.enqueEvents(event_properties)
     }
 
     async deviceOnline(properties = {}){
         let event_properties = {
             "event_name": "device_online",
-            "metadata" : {}
+            "event_properties" : {
+                "connection_type": event_properties?.network?.connection_type,
+                ...properties
+            }
         }
-        // add additional event properties
-        let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['metadata'] = {
-            "connection_type": event_properties?.network?.connection_type,
-            ...properties
-        };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
-        // qnque events
         await this.enqueEvents(event_properties)
         await window.nexora.device.set({
             "offline" : false
@@ -280,16 +257,9 @@ export class Event{
     async deviceOffline(properties = {}){
         let event_properties = {
             "event_name": "device_offline",
-            "metadata" : {}
+            "event_properties" : properties
         }
-        // add additional event properties
-        let sessionOccurence = this.session.getSessionOccurence()
-        event_properties['metadata'] = {
-            ...properties
-        };
-        // default properties
         event_properties = {...event_properties, ...await this.getDefaultEventProperties()}
-        // enque events
         await this.enqueEvents(event_properties)
         await window.nexora.device.set({
             "offline" : true
@@ -300,11 +270,12 @@ export class Event{
         clearTimeout(this.inactivityTimeout);
         this.inactivityTimeout = setTimeout(() => {
             this.event.sessionEnded()
-        }, 20 * 60 * 1000); // 20 minutes
+        }, 20 * 60 * 1000);
     }
 
     async enqueEvents(event_properties, executables = null, is_custom_events = false){
         // pushing in queue
+        console.log("((((((((((inside enque events)))))))))))))))))))")
         event_properties["user"] = await this.user.get()
         if(is_custom_events){
             window.nexora.eventBuffer.enqueueCustomEvents(

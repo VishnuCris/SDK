@@ -14,54 +14,71 @@ import { Storage } from "./storage";
 
 export class NexoraCore{    
     constructor(clientId, apiKey, apiDomain){
-        // instance of api
         this.api = new API(clientId, apiKey, apiDomain)
-        // instance of storage
         this.storage = new Storage();
-        // instance of user
         this.user = new User(this.clientId, this.apiKey, this.api, this.storage);
-        // instance of event
         this.event = new Event(clientId, apiKey, this.user)
-        // instance of device
         this.device = new Device()
-        // set config of sdk
         this.config = new SDKConfig();
-        // create instance for event modules
         this.eventBuffer = new EventBuffer()
         this.eventDispatcher = new EventDispatcher(
             this.api,
             this.config.get('batch_size'),
         )
         this.batchFlusher = new BatchFlusher(this.eventBuffer, this.eventDispatcher, this.config)
-        // register all events
         this.registerSystemEvents()
-        // start batch flusher
         this.batchFlusher.start();
-        // notifications
         this.FirebasePushSDK = FirebasePushSDK;
+        this.visibilityHiddenAt = 0;
     }
 
     registerSystemEvents(){
-        this.listenWebsiteLaunchedEvent()
+        // this.listenWebsiteLaunchedEvent()
         this.listenWebsiteClosedhEvent()
         this.listenDeviceOnlineEvent()
         this.listenDeviceOfflineEvent()
         this.listenFirebaseServiceWorkerMessages()
         this.handleGlobalExceptions()
-        // this.listenNoticationRecievedEvent()
-        // this.listenNotificationViewedEvent()
-        // this.listenNotificationDismissedEvent()
+    }
+
+    onDOMReady(){
+        let self = this
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            // DOM already ready — call immediately
+            self.listenWebsiteLaunchedEvent()
+          } else {
+            window.addEventListener('DOMContentLoaded', () => {
+                self.listenWebsiteLaunchedEvent()
+            });
+          }
     }
     
     listenWebsiteLaunchedEvent(){
-        window.addEventListener('load', () => {
-            this.event.screenViewed()
-        });
+        // alert("inside load event")
+        console.log("inside load event")
+        this.event.screenViewed()
     }
 
     listenWebsiteClosedhEvent(){
-        window.addEventListener('beforeunload', () => {
+        // window.addEventListener('beforeunload', () => {
+        //     console.log("inside on beforeunload")
+        //     this.event.websiteClosed()
+        // });
+        let self = this
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+              self.visibilityHiddenAt = Date.now();
+            }
+        });
+        
+        window.addEventListener('pagehide', (event) => {
+        const now = Date.now();
+        
+        if (now - self.visibilityHiddenAt < 200) {
+            // Heuristic: Tab closed (not just backgrounded)
+            console.log('[SDK] Tab was closed.');
             this.event.websiteClosed()
+        }
         });
           
     }
@@ -80,48 +97,29 @@ export class NexoraCore{
           
     }
 
-    listenNoticationRecievedEvent(){
-        wintdow.addEventListener('push', (event) => {
-            if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
-                this.event.notificationRecieved()
-        });
-          
-    }
-
-    listenNotificationViewedEvent(){
-        window.addEventListener('notificationclick', (event) => {
-            if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
-                this.event.notificationOpened()
-        });
-          
-    }
-
-    listenNotificationDismissedEvent(){
-        window.addEventListener('notificationclose', (event) => {
-            if(event?.data && event.data.json()) // if the notification is from nexora campign then it must contain data as json and we allow to record this event.
-                this.event.notificationDismissed()
-        });
-          
-    }
-
     listenFirebaseServiceWorkerMessages() {
+        console.log(navigator.serviceWorker)
+        console.log("((((((navigator.serviceWorker))))))")
         if (!navigator.serviceWorker) return;
       
         navigator.serviceWorker.addEventListener('message', (event) => {
-          const { messageType, notification } = event.data || {};
-          console.log("[Nexora SDK] SW message received:", messageType, notification);
-      
-          switch (messageType) {
+            console.log("inside messae ---------------")
+            const { messageType, notification } = event.data || {};
+            console.log(messageType)
+            console.log(notification)
+            console.log("[Nexora SDK] SW message received:", messageType, notification);
+        
+            switch (messageType) {
             case 'push-received':
-              this.event.notificationRecieved(notification);
-              break;
+                this.event.notificationRecieved(notification);
+                break;
             case 'notification-clicked':
-              this.event.notificationOpened(notification);
-              break;
+                this.event.notificationOpened(notification);
+                break;
             case 'notification_dismissed':
-              this.event.notificationDismissed(notification);
-              break;
-          }
+                this.event.notificationDismissed(notification);
+                break;
+            }
         });
       }
       
@@ -135,7 +133,5 @@ export class NexoraCore{
             Logger.logError(event.reason, "unhandled_promise_rejection");
         });
     }
-
-    // get config of sdk
 
 }

@@ -109,6 +109,7 @@ export default class FirebasePushSDK {
   }
 
   _setupForegroundListener() {
+    console.log("-----------------------------------------")
     if (!this.messaging) {
       console.warn("⚠️ Messaging not initialized");
       return;

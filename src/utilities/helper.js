@@ -62,14 +62,14 @@ export class Helpers{
       const diffHours   = Math.floor(diffMs / (1000 * 60 * 60));
       const diffDays    = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-      if (seconds < 60) {
-        return `${seconds} second${seconds !== 1 ? 's' : ''}`;
-      } else if (minutes < 60) {
-        return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
-      } else if (hours < 24) {
-        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      if (diffSeconds < 60) {
+        return `${diffSeconds} second${diffSeconds !== 1 ? 's' : ''}`;
+      } else if (diffMinutes < 60) {
+        return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''}`;
+      } else if (diffHours < 24) {
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''}`;
       } else {
-        return `${days} day${days !== 1 ? 's' : ''}`;
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
       }
     }
 }
