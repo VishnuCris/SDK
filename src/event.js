@@ -90,12 +90,8 @@ export class Event{
         }
         if(!ignorable_properties.includes('context')){
             properties['context'] = {
-                // "locale" : navigator.language || 'en-US',
-                // "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
                 "locale" : 'en-US',
                 "timezone": 'GMT',
-                // "referrer" :  document.referrer || "",
-                // "utm_source": new URLSearchParams(window.location.search).get('utm_source')
             }
         }
 
@@ -151,7 +147,6 @@ export class Event{
     async screenViewed(properties = {}){
         console.log(await this.user.isExists())
         if(!(await this.user.isExists())){
-            console.log("((((((((((((((((((((((((((((((((")
             await this.websiteLaunched()
             await this.resetInactivityTimer()
         }
@@ -243,7 +238,7 @@ export class Event{
         let event_properties = {
             "event_name": "device_online",
             "event_properties" : {
-                "connection_type": event_properties?.network?.connection_type,
+                "connection_type": navigator?.connection?.effectiveType,
                 ...properties
             }
         }
@@ -270,12 +265,11 @@ export class Event{
         clearTimeout(this.inactivityTimeout);
         this.inactivityTimeout = setTimeout(() => {
             this.event.sessionEnded()
-        }, 20 * 60 * 1000);
+        }, 10000);
     }
 
     async enqueEvents(event_properties, executables = null, is_custom_events = false){
         // pushing in queue
-        console.log("((((((((((inside enque events)))))))))))))))))))")
         event_properties["user"] = await this.user.get()
         if(is_custom_events){
             window.nexora.eventBuffer.enqueueCustomEvents(

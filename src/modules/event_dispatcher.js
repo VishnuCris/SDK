@@ -15,7 +15,6 @@ export default class EventDispatcher {
   
       this.isSending = true;
       const payload = events.slice(0, this.batchSize);
-  
       try {
         await this.api.request(Endpoints.systemEvent, payload, true);
       } catch (e) {
